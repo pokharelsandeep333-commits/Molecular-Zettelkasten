@@ -54,7 +54,7 @@ Keep it under 20 words. Do NOT answer the question. Just output the search terms
         const actualPath = path.join(VAULT_PATH, `${slug}.md`);
         const content = await fs.readFile(actualPath, 'utf-8');
         contexts.push(`--- Note: ${slug} ---\n${content}`);
-      } catch (e) {
+      } catch {
         console.warn('Could not read file for context:', slug);
       }
     }
@@ -104,7 +104,7 @@ ${contextString}`;
     });
 
     return result.toDataStreamResponse();
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Chat API Error:', error);
     
     // Handle Gemini API Quota Limits gracefully

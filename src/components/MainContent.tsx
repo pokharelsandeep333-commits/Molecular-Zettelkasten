@@ -1,6 +1,5 @@
 import React from 'react';
 import { Network, FileText, MessageSquare } from 'lucide-react';
-import { MarkdownRenderer } from '@/components/MarkdownRenderer';
 import { GraphView } from '@/components/GraphView';
 import type { GraphData } from '@/app/page';
 

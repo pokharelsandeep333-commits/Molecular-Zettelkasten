@@ -68,7 +68,8 @@ export async function GET() {
   try {
     const tree = await buildTree(VAULT_PATH, VAULT_PATH);
     return NextResponse.json({ tree });
-  } catch (error) {
+  } catch (err) {
+    console.error("Error building tree:", err);
     return NextResponse.json({ error: 'Failed to read vault tree' }, { status: 500 });
   }
 }

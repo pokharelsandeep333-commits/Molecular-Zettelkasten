@@ -83,7 +83,8 @@ export async function GET(request: Request) {
     }
 
     return NextResponse.json({ notes, total: notes.length });
-  } catch (error) {
+  } catch (err) {
+    console.error("Error reading file:", err);
     return NextResponse.json({ error: 'Failed to read vault' }, { status: 500 });
   }
 }

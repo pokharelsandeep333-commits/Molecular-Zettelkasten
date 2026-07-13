@@ -1,16 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Folder, FolderOpen, FileText, Search, Files, ChevronRight, ChevronDown } from 'lucide-react';
+import { Folder, FolderOpen, FileText, Search, ChevronRight, ChevronDown } from 'lucide-react';
 import type { TreeNode } from '@/app/api/tree/route';
-import type { NoteMetadata } from '@/app/api/notes/route';
 
 interface LeftSidebarProps {
   onNodeClick: (slug: string) => void;
   activeNoteSlug: string | null;
-  // Search state
-  searchQuery: string;
-  onSearch: (q: string) => void;
-  searchResults: NoteMetadata[];
-  isSearchLoading: boolean;
 }
 
 const FileTreeNode: React.FC<{
@@ -74,11 +68,7 @@ const FileTreeNode: React.FC<{
 
 export const LeftSidebar: React.FC<LeftSidebarProps> = ({
   onNodeClick,
-  activeNoteSlug,
-  searchQuery,
-  onSearch,
-  searchResults,
-  isSearchLoading
+  activeNoteSlug
 }) => {
   const [treeData, setTreeData] = useState<TreeNode[]>([]);
 

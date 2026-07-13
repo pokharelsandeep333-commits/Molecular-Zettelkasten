@@ -30,8 +30,9 @@ export default function Login() {
     setIsLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
-    } catch (err: any) {
-      setError(err.message || 'Failed to login');
+    } catch (err: unknown) {
+      const error = err as Error;
+      setError(error.message || 'Failed to login');
       setIsLoading(false);
     }
   };
@@ -41,8 +42,9 @@ export default function Login() {
     setIsGoogleLoading(true);
     try {
       await signInWithPopup(auth, googleProvider);
-    } catch (err: any) {
-      setError(err.message || 'Google sign-in failed');
+    } catch (err: unknown) {
+      const error = err as Error;
+      setError(error.message || 'Google sign-in failed');
       setIsGoogleLoading(false);
     }
   };

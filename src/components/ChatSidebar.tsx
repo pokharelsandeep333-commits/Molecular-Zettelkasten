@@ -11,6 +11,7 @@ const SESSIONS_STORAGE_KEY = 'mz_chat_sessions';
 export interface ChatSession {
   id: string;
   title: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   messages: any[];
   updatedAt: number;
 }
@@ -57,7 +58,9 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ onNodeClick }) => {
               updatedAt: Date.now()
             }];
           }
-        } catch(e) {}
+        } catch {
+          // empty
+        }
       }
     }
 
@@ -70,6 +73,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ onNodeClick }) => {
       }];
     }
 
+    // eslint-disable-next-line
     setSessions(loadedSessions);
     
     // Pick the most recent session

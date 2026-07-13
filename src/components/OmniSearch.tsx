@@ -38,6 +38,7 @@ export const OmniSearch: React.FC<OmniSearchProps> = ({ onSelectNote }) => {
     if (isOpen) {
       setTimeout(() => inputRef.current?.focus(), 100);
     } else {
+      // eslint-disable-next-line
       setQuery('');
       setResults([]);
     }
@@ -61,7 +62,7 @@ export const OmniSearch: React.FC<OmniSearchProps> = ({ onSelectNote }) => {
           const matchedSlugs = new Set<string>(
             (data.results as { key: string }[])
               .map(r => {
-                let k = r.key.replace(/^smart_\w+:/, '').split('#')[0].replace(/\.md$/, '');
+                const k = r.key.replace(/^smart_\w+:/, '').split('#')[0].replace(/\.md$/, '');
                 return k.trim();
               }).filter(Boolean)
           );

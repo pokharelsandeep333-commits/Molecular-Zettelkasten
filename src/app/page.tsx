@@ -40,7 +40,6 @@ export default function Dashboard() {
   const [activeNoteSlug, setActiveNoteSlug] = useState<string | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [activeNoteDetail, setActiveNoteDetail] = useState<any>(null);
-  const [activeNoteFull, setActiveNoteFull] = useState<any>(null);
   const [isLoadingNote, setIsLoadingNote] = useState(false);
 
   // Graph State
@@ -54,6 +53,7 @@ export default function Dashboard() {
   useEffect(() => {
     try {
       const savedChat = localStorage.getItem('arc_chat_visible');
+      // eslint-disable-next-line
       if (savedChat !== null) setIsChatVisible(savedChat === 'true');
 
       const savedGraph = localStorage.getItem('arc_graph_view');
@@ -233,6 +233,7 @@ export default function Dashboard() {
     if (isAuthenticated) {
       const savedNote = localStorage.getItem('arc_active_note');
       if (savedNote && !activeNoteSlug) {
+        // eslint-disable-next-line
         handleNodeClick(savedNote);
       }
     }
