@@ -58,6 +58,10 @@ RUN chown nextjs:nodejs .next
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
+# IMPORTANT FIX for @xenova/transformers / onnxruntime-node:
+# Next.js standalone tracing misses the native C++ .so libraries. We must manually copy them.
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/onnxruntime-node ./node_modules/onnxruntime-node
+
 USER nextjs
 
 EXPOSE 3000
