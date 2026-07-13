@@ -106,11 +106,12 @@ ${contextString}`;
     return result.toDataStreamResponse();
   } catch (error: unknown) {
     console.error('Chat API Error:', error);
+    const err = error as Error;
     
     // Handle Gemini API Quota Limits gracefully
-    if (error?.message?.includes('Quota exceeded') || error?.message?.includes('429')) {
+    if (err?.message?.includes('Quota exceeded') || err?.message?.includes('429')) {
       let timeString = 'a few minutes';
-      const retryMatch = error.message.match(/retry in ([\d.]+)s/);
+      const retryMatch = err.message.match(/retry in ([\d.]+)s/);
       let isDaily = false;
 
       if (retryMatch) {
