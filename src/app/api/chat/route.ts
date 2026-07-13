@@ -136,7 +136,7 @@ ${contextString}`;
       }
 
       // Try to extract the limit value to provide more context
-      const limitMatch = error.message.match(/limit: (\d+)/);
+      const limitMatch = err.message ? err.message.match(/limit: (\d+)/) : null;
       let limitContext = '';
       if (limitMatch) {
         const limitVal = parseInt(limitMatch[1], 10);
@@ -154,6 +154,6 @@ ${contextString}`;
       });
     }
 
-    return new Response(error.message || 'Failed to process chat request', { status: 500 });
+    return new Response(err.message || 'Failed to process chat request', { status: 500 });
   }
 }
