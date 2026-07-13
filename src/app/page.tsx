@@ -45,6 +45,9 @@ export default function Dashboard() {
   // Chat State
   const [isChatVisible, setIsChatVisible] = useState(true);
 
+  // Mobile Layout State
+  const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(false);
+
   // Load Persisted State on Mount
   useEffect(() => {
     try {
@@ -201,6 +204,8 @@ export default function Dashboard() {
       <LeftSidebar 
         onNodeClick={handleNodeClick}
         activeNoteSlug={activeNoteSlug}
+        isLeftSidebarOpen={isLeftSidebarOpen}
+        setIsLeftSidebarOpen={setIsLeftSidebarOpen}
       />
       <MainContent 
         activeNoteDetail={activeNoteDetail}
@@ -212,9 +217,10 @@ export default function Dashboard() {
         setIsChatVisible={setIsChatVisible}
         onNodeClick={handleNodeClick}
         isLoadingNote={isLoadingNote}
+        setIsLeftSidebarOpen={setIsLeftSidebarOpen}
       />
       
-      {isChatVisible && <ChatSidebar onNodeClick={handleNodeClick} />}
+      {isChatVisible && <ChatSidebar onNodeClick={handleNodeClick} setIsChatVisible={setIsChatVisible} />}
     </div>
   );
 }

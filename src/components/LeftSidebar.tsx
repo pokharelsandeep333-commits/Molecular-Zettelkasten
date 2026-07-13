@@ -5,6 +5,8 @@ import type { TreeNode } from '@/app/api/tree/route';
 interface LeftSidebarProps {
   onNodeClick: (slug: string) => void;
   activeNoteSlug: string | null;
+  isLeftSidebarOpen: boolean;
+  setIsLeftSidebarOpen: (v: boolean) => void;
 }
 
 const FileTreeNode: React.FC<{
@@ -68,7 +70,9 @@ const FileTreeNode: React.FC<{
 
 export const LeftSidebar: React.FC<LeftSidebarProps> = ({
   onNodeClick,
-  activeNoteSlug
+  activeNoteSlug,
+  isLeftSidebarOpen,
+  setIsLeftSidebarOpen
 }) => {
   const [treeData, setTreeData] = useState<TreeNode[]>([]);
 
@@ -81,7 +85,19 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
   }, []);
 
   return (
-    <div className="w-[300px] h-full flex flex-col bg-surface-container-lowest border-r border-whisper-border shrink-0">
+    <>
+      {/* Mobile Backdrop Overlay */}
+      {isLeftSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden transition-opacity"
+          onClick={() => setIsLeftSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar Content */}
+      <div className={`fixed inset-y-0 left-0 w-[300px] h-full flex flex-col bg-surface-container-lowest border-r border-whisper-border shrink-0 z-50 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${
+        isLeftSidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'
+      }`}>
       
       {/* App Header */}
       <div className="h-12 border-b border-whisper-border flex items-center px-4 shrink-0">
@@ -114,12 +130,16 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
               key={i}
               node={node}
               level={0}
-              onNodeClick={onNodeClick}
+              onNodeClick={(slug) => {
+                onNodeClick(slug);
+                setIsLeftSidebarOpen(false); // Close on mobile after click
+              }}
               activeNoteSlug={activeNoteSlug}
             />
           ))}
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 };

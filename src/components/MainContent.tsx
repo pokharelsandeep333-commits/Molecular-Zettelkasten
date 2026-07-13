@@ -1,5 +1,5 @@
 import React from 'react';
-import { Network, FileText, MessageSquare } from 'lucide-react';
+import { Network, FileText, MessageSquare, Menu } from 'lucide-react';
 import { GraphView } from '@/components/GraphView';
 import type { GraphData } from '@/app/page';
 
@@ -22,6 +22,7 @@ interface MainContentProps {
   setIsChatVisible: (v: boolean) => void;
   onNodeClick: (slug: string) => void;
   isLoadingNote?: boolean;
+  setIsLeftSidebarOpen: (v: boolean) => void;
 }
 
 export const MainContent: React.FC<MainContentProps> = ({
@@ -33,49 +34,59 @@ export const MainContent: React.FC<MainContentProps> = ({
   isChatVisible,
   setIsChatVisible,
   onNodeClick,
-  isLoadingNote
+  isLoadingNote,
+  setIsLeftSidebarOpen
 }) => {
   return (
     <div className="flex-1 min-w-0 h-full flex flex-col bg-surface-dim relative transition-all duration-300 ease-in-out">
       
       {/* Top Header */}
-      <div className="h-12 border-b border-whisper-border bg-surface-container/50 backdrop-blur-sm flex items-center justify-between px-6 shrink-0 z-10">
-        <div className="flex items-center gap-2">
+      <div className="h-12 border-b border-whisper-border bg-surface-container/50 backdrop-blur-sm flex items-center justify-between px-4 md:px-6 shrink-0 z-10">
+        <div className="flex items-center gap-3">
+          <button 
+            className="md:hidden text-muted-steel hover:text-electric-cyan transition-colors"
+            onClick={() => setIsLeftSidebarOpen(true)}
+          >
+            <Menu size={18} />
+          </button>
+          
           {activeNoteDetail ? (
-            <>
-              <FileText size={16} className="text-electric-cyan" />
-              <span className="font-tech text-electric-cyan tracking-wider truncate max-w-xl text-sm">
+            <div className="flex items-center gap-2">
+              <FileText size={16} className="text-electric-cyan shrink-0" />
+              <span className="font-tech text-electric-cyan tracking-wider truncate max-w-[120px] sm:max-w-xs md:max-w-xl text-sm">
                 {activeNoteDetail.title}
               </span>
-            </>
+            </div>
           ) : (
-            <span className="text-muted-steel font-tech tracking-widest text-sm">STANDBY...</span>
+            <span className="text-muted-steel font-tech tracking-widest text-sm truncate">STANDBY...</span>
           )}
         </div>
 
         <div className="flex items-center gap-2">
           <button
             onClick={() => setIsGraphView(!isGraphView)}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-tech transition-colors border ${
+            className={`flex items-center gap-2 px-2 sm:px-3 py-1.5 rounded-md text-xs font-tech transition-colors border ${
               isGraphView
                 ? 'bg-electric-cyan/20 border-electric-cyan/50 text-electric-cyan shadow-[0_0_10px_rgba(6,182,212,0.2)]'
                 : 'bg-surface-container border-whisper-border hover:border-electric-cyan/50 text-muted-steel hover:text-on-surface'
             }`}
+            title="Toggle Network View"
           >
             <Network size={14} />
-            {isGraphView ? 'CLOSE NETWORK' : 'NETWORK'}
+            <span className="hidden sm:inline">{isGraphView ? 'CLOSE NETWORK' : 'NETWORK'}</span>
           </button>
           
           <button
             onClick={() => setIsChatVisible(!isChatVisible)}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-tech transition-colors border ${
+            className={`flex items-center gap-2 px-2 sm:px-3 py-1.5 rounded-md text-xs font-tech transition-colors border ${
               isChatVisible
                 ? 'bg-electric-cyan/20 border-electric-cyan/50 text-electric-cyan shadow-[0_0_10px_rgba(6,182,212,0.2)]'
                 : 'bg-surface-container border-whisper-border hover:border-electric-cyan/50 text-muted-steel hover:text-on-surface'
             }`}
+            title="Toggle O.R.I.O.N."
           >
             <MessageSquare size={14} />
-            {isChatVisible ? 'STANDBY O.R.I.O.N.' : 'ACTIVATE O.R.I.O.N.'}
+            <span className="hidden sm:inline">{isChatVisible ? 'STANDBY O.R.I.O.N.' : 'ACTIVATE O.R.I.O.N.'}</span>
           </button>
         </div>
       </div>
