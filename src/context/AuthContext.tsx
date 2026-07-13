@@ -21,7 +21,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user && user.email !== 'pokharelsandeep333@gmail.com') {
+        alert("Access Denied: Unauthorized email address.");
+        await auth.signOut();
+        setUser(null);
+        setLoading(false);
+        if (pathname !== '/login') router.push('/login');
+        return;
+      }
+
       setUser(user);
       setLoading(false);
       
