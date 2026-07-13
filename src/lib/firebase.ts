@@ -16,4 +16,5 @@ const app = typeof window !== 'undefined' && !getApps().length
   ? initializeApp(firebaseConfig) 
   : typeof window !== 'undefined' ? getApp() : null;
   
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const auth = app ? getAuth(app) : null as any;

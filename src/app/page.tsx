@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
@@ -30,11 +30,7 @@ export default function Dashboard() {
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
-  // Search State
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<NoteMetadata[]>([]);
-  const [isSearchLoading, setIsSearchLoading] = useState(false);
-  const searchTimeout = useRef<NodeJS.Timeout>(null);
+  // Search State has been moved to OmniSearch.tsx
 
   // Note State
   const [activeNoteSlug, setActiveNoteSlug] = useState<string | null>(null);
@@ -136,52 +132,7 @@ export default function Dashboard() {
     setGraphData({ nodes, links });
   }, []);
 
-  // Handle Search
-  const handleSearch = useCallback((q: string) => {
-    setSearchQuery(q);
-    if (searchTimeout.current) clearTimeout(searchTimeout.current);
-    
-    searchTimeout.current = setTimeout(async () => {
-      if (!q.trim()) {
-        setSearchResults([]);
-        setIsSearchLoading(false);
-        return;
-      }
-      setIsSearchLoading(true);
-      try {
-        const res = await fetch(`/api/search?q=${encodeURIComponent(q)}&limit=20`);
-        if (res.ok) {
-          const data = await res.json();
-          const matchedSlugs = new Set<string>(
-            (data.results as { key: string }[])
-              .map(r => {
-                let k = r.key;
-                k = k.replace(/^smart_\w+:/, '');
-                k = k.split('#')[0];
-                k = k.replace(/\.md$/, '');
-                return k.trim();
-              })
-              .filter(Boolean)
-          );
-
-          const noteData = await fetch('/api/notes?limit=500');
-          const allNotes = await noteData.json();
-          const filtered = (allNotes.notes as NoteMetadata[]).filter(n =>
-            matchedSlugs.has(n.slug)
-          );
-          
-          setSearchResults(filtered);
-        }
-      } catch {
-        // Keyword fallback
-        const res = await fetch(`/api/notes?q=${encodeURIComponent(q)}&limit=20`);
-        const data = await res.json();
-        if (data.notes) setSearchResults(data.notes);
-      } finally {
-        setIsSearchLoading(false);
-      }
-    }, 500);
-  }, []);
+  // Search functionality is now completely handled within OmniSearch.tsx
 
   // Load all notes for graph on mount
   useEffect(() => {
