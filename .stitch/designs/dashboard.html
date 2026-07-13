@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Molecular Zettelkasten - Main Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Geist+Mono:wght@100..900&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-container": "#e89337",
+                        "on-surface": "#e2e1eb",
+                        "surface-tint": "#4cd7f6",
+                        "secondary": "#c8c6c8",
+                        "primary-fixed-dim": "#4cd7f6",
+                        "surface-container-low": "#1a1b22",
+                        "surface-container-lowest": "#0c0e14",
+                        "on-primary": "#003640",
+                        "on-secondary-container": "#b7b4b7",
+                        "on-primary-fixed": "#001f26",
+                        "tertiary-fixed": "#ffdcbf",
+                        "electric-cyan": "#06B6D4",
+                        "on-secondary-fixed": "#1c1b1d",
+                        "surface-variant": "#33343c",
+                        "pure-ink": "#FAFAFA",
+                        "on-surface-variant": "#bcc9cd",
+                        "background": "#12131a",
+                        "on-secondary-fixed-variant": "#474649",
+                        "surface": "#12131a",
+                        "secondary-container": "#474649",
+                        "on-primary-container": "#00424f",
+                        "muted-steel": "#A1A1AA",
+                        "on-error-container": "#ffdad6",
+                        "surface-bright": "#383940",
+                        "primary": "#4cd7f6",
+                        "surface-container-highest": "#33343c",
+                        "outline-variant": "#3d494c",
+                        "glass-surface": "rgba(24, 24, 27, 0.6)",
+                        "surface-container-high": "#282a31",
+                        "on-error": "#690005",
+                        "surface-dim": "#12131a",
+                        "on-background": "#e2e1eb",
+                        "abyssal-bg": "#09090B",
+                        "surface-container": "#1e1f26",
+                        "on-tertiary-fixed-variant": "#6a3b00",
+                        "whisper-border": "rgba(255, 255, 255, 0.1)",
+                        "tertiary": "#ffb873",
+                        "on-tertiary-fixed": "#2d1600",
+                        "on-primary-fixed-variant": "#004e5c",
+                        "primary-fixed": "#acedff",
+                        "inverse-surface": "#e2e1eb",
+                        "error": "#ffb4ab",
+                        "primary-container": "#06b6d4",
+                        "on-tertiary": "#4b2800",
+                        "inverse-on-surface": "#2f3037",
+                        "tertiary-fixed-dim": "#ffb873",
+                        "secondary-fixed-dim": "#c8c6c8",
+                        "error-container": "#93000a",
+                        "on-tertiary-container": "#5b3200",
+                        "on-secondary": "#313032",
+                        "secondary-fixed": "#e5e1e4",
+                        "outline": "#869397",
+                        "inverse-primary": "#00687a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "panel-sidebar": "320px",
+                        "gutter": "16px",
+                        "container-max": "1440px",
+                        "margin-mobile": "16px",
+                        "unit": "4px",
+                        "margin-desktop": "24px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Geist"],
+                        "label-mono": ["Geist Mono"],
+                        "code-mono": ["Geist Mono"],
+                        "headline-lg-mobile": ["Geist"],
+                        "body-base": ["Geist"],
+                        "body-sm": ["Geist"],
+                        "headline-xl": ["Geist"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["32px", { "lineHeight": "1.2", "letterSpacing": "-0.03em", "fontWeight": "600" }],
+                        "label-mono": ["12px", { "lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "code-mono": ["13px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "body-base": ["16px", { "lineHeight": "1.6", "letterSpacing": "0em", "fontWeight": "400" }],
+                        "body-sm": ["14px", { "lineHeight": "1.5", "letterSpacing": "0em", "fontWeight": "400" }],
+                        "headline-xl": ["40px", { "lineHeight": "1.1", "letterSpacing": "-0.04em", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { margin: 0; overflow: hidden; }
+        .bg-graph {
+            background: radial-gradient(circle at center, #1a1b22 0%, #09090B 100%);
+        }
+        /* Minimalist scrollbar */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
+    </style>
+</head>
+<body class="bg-abyssal-bg text-on-surface font-body-base antialiased h-screen w-screen overflow-hidden selection:bg-electric-cyan selection:text-on-primary">
+<!-- z-0 Background Layer (Simulated 3D Graph Area) -->
+<div class="absolute inset-0 z-0 bg-graph w-full h-full">
+<!-- Abstract representation of nodes connected by lines -->
+<svg class="w-full h-full opacity-30" xmlns="http://www.w3.org/2000/svg">
+<line opacity="0.5" stroke="#06B6D4" stroke-width="1" x1="30%" x2="50%" y1="40%" y2="60%"></line>
+<line opacity="0.3" stroke="#869397" stroke-width="1" x1="50%" x2="70%" y1="60%" y2="30%"></line>
+<line opacity="0.3" stroke="#869397" stroke-width="1" x1="50%" x2="60%" y1="60%" y2="80%"></line>
+<circle cx="30%" cy="40%" fill="#869397" r="4"></circle>
+<circle class="animate-pulse" cx="50%" cy="60%" fill="#06B6D4" r="6" style="filter: drop-shadow(0 0 8px #06B6D4);"></circle>
+<circle cx="70%" cy="30%" fill="#869397" r="4"></circle>
+<circle cx="60%" cy="80%" fill="#869397" r="3"></circle>
+</svg>
+</div>
+<!-- TopNavBar Component -->
+<nav class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-margin-desktop h-16 bg-glass-surface backdrop-blur-md border-b border-whisper-border shadow-2xl">
+<div class="flex items-center gap-4">
+<span class="font-headline-lg text-headline-lg font-bold text-on-surface hidden md:block tracking-tight">Molecular Zettelkasten</span>
+<span class="font-headline-lg-mobile text-headline-lg-mobile font-bold text-on-surface md:hidden tracking-tight">MZ</span>
+</div>
+<div class="flex-1 max-w-xl mx-8 relative hidden md:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">search</span>
+<input class="w-full bg-surface-container-high border border-whisper-border text-on-surface font-body-sm rounded-full py-1.5 pl-10 pr-4 focus:outline-none focus:ring-1 focus:ring-electric-cyan focus:border-electric-cyan transition-colors" placeholder="Semantic query..." type="text"/>
+</div>
+<div class="flex items-center gap-4">
+<button class="hover:text-electric-cyan transition-colors duration-200 p-2 md:hidden">
+<span class="material-symbols-outlined text-on-surface-variant">search</span>
+</button>
+<button class="hover:text-electric-cyan transition-colors duration-200 p-2 relative group">
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-electric-cyan">settings</span>
+</button>
+<button class="hover:text-electric-cyan transition-colors duration-200 p-2 relative group">
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-electric-cyan">help</span>
+</button>
+<button class="hover:text-electric-cyan transition-colors duration-200 p-2 relative group">
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-electric-cyan">account_tree</span>
+</button>
+<div class="h-6 w-px bg-whisper-border mx-2"></div>
+<img alt="User profile" class="w-8 h-8 rounded-full border border-whisper-border object-cover" data-alt="A small, circular profile picture of an abstract, dark-themed AI system avatar, predominantly deep blues and greys, high tech, sharp details, minimalist style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDLGoa9p8KvcF9kLpGLtg65cbYIobQXGFcaClmBUhtq_EIY7iosGtwwbBqmozmol9diYgS7A8qo4G3pS1tVbo1gUx9ZLJN7XrAuJQRjYTQvtYhCRT3UmE5y5HAYPLf-T2AZC550BBk1pvogIgS1d8G5PdCrHG6YG1jXmVKnpuvVV4z4DLP0v-UyFmhWqTQvHwAAEDEdcnqkfP_8npibOMs1OUf5gB9deH6GB6_niPpoeb9qLxa6SxZiAB-Wi5ergF0Gyu8gSeDRRww"/>
+</div>
+</nav>
+<!-- SideNavBar Component (Adapted as Semantic Search Results Left Panel) -->
+<aside class="fixed left-0 top-16 h-[calc(100vh-64px)] w-panel-sidebar flex flex-col z-40 bg-glass-surface backdrop-blur-md border-r border-whisper-border hidden md:flex">
+<div class="p-gutter border-b border-whisper-border">
+<h2 class="font-label-mono text-label-mono text-on-surface-variant uppercase tracking-widest mb-1">Semantic Search Results</h2>
+<div class="text-body-sm text-muted-steel">3 nodes match query</div>
+</div>
+<div class="flex-1 overflow-y-auto p-unit space-y-unit">
+<!-- Active Node Card -->
+<button class="w-full text-left bg-surface-container-high/50 border border-electric-cyan/50 rounded-lg p-3 hover:bg-surface-variant/50 transition-colors relative group -translate-y-px">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-electric-cyan rounded-l-lg"></div>
+<div class="pl-2">
+<h3 class="font-body-base text-electric-cyan font-medium mb-1 truncate">Neural Architecture Search</h3>
+<p class="font-body-sm text-on-surface-variant line-clamp-2 mb-2 leading-relaxed">Automated design of artificial neural networks using machine learning techniques...</p>
+<div class="inline-flex items-center gap-1 bg-surface-container px-2 py-0.5 rounded-full border border-whisper-border">
+<span class="font-label-mono text-label-mono text-muted-steel">#AI</span>
+</div>
+</div>
+</button>
+<!-- Inactive Node Card -->
+<button class="w-full text-left bg-transparent border border-whisper-border rounded-lg p-3 hover:bg-surface-variant/30 transition-colors group">
+<h3 class="font-body-base text-on-surface font-medium mb-1 truncate group-hover:text-electric-cyan transition-colors">Quantum Entanglement</h3>
+<p class="font-body-sm text-on-surface-variant line-clamp-2 mb-2 leading-relaxed">Non-local correlations between particles separated by arbitrary distances...</p>
+<div class="inline-flex items-center gap-1 bg-surface-container px-2 py-0.5 rounded-full border border-whisper-border">
+<span class="font-label-mono text-label-mono text-muted-steel">#physics</span>
+</div>
+</button>
+<!-- Inactive Node Card -->
+<button class="w-full text-left bg-transparent border border-whisper-border rounded-lg p-3 hover:bg-surface-variant/30 transition-colors group">
+<h3 class="font-body-base text-on-surface font-medium mb-1 truncate group-hover:text-electric-cyan transition-colors">Topology & Manifolds</h3>
+<p class="font-body-sm text-on-surface-variant line-clamp-2 mb-2 leading-relaxed">Mathematical study of properties preserved under continuous deformations...</p>
+<div class="inline-flex items-center gap-1 bg-surface-container px-2 py-0.5 rounded-full border border-whisper-border">
+<span class="font-label-mono text-label-mono text-muted-steel">#math</span>
+</div>
+</button>
+</div>
+</aside>
+<!-- Floating Right Panel: Node Details -->
+<main class="fixed right-margin-desktop top-[88px] bottom-margin-desktop w-[400px] z-40 flex flex-col hidden lg:flex">
+<div class="flex-1 bg-glass-surface backdrop-blur-md border border-whisper-border rounded-xl shadow-2xl flex flex-col overflow-hidden">
+<!-- Panel Header -->
+<div class="p-5 border-b border-whisper-border flex justify-between items-start bg-surface-container-high/30">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="material-symbols-outlined text-electric-cyan text-sm" style="font-variation-settings: 'FILL' 1;">hub</span>
+<span class="font-label-mono text-label-mono text-muted-steel">NODE-7842</span>
+</div>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile font-bold text-on-surface">Neural Architecture Search</h1>
+</div>
+<div class="flex gap-2">
+<button class="p-1.5 text-on-surface-variant hover:text-electric-cyan hover:bg-surface-variant/50 rounded-md transition-colors">
+<span class="material-symbols-outlined text-sm">edit</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-electric-cyan hover:bg-surface-variant/50 rounded-md transition-colors">
+<span class="material-symbols-outlined text-sm">share</span>
+</button>
+</div>
+</div>
+<!-- Panel Body (Markdown Content) -->
+<div class="flex-1 p-5 overflow-y-auto space-y-4 font-body-base text-on-surface-variant leading-relaxed">
+<p>Neural architecture search (NAS) is a technique for automating the design of artificial neural networks (ANN), a widely used model in the field of machine learning.</p>
+<h3 class="font-bold text-on-surface mt-6 mb-2">Search Space</h3>
+<p>The search space defines the set of all possible architectures that can be discovered. Common spaces include:</p>
+<ul class="list-disc pl-5 space-y-1">
+<li>Chain-structured networks</li>
+<li>Multi-branch networks</li>
+<li>Cell-based spaces (e.g., DARTS)</li>
+</ul>
+<div class="bg-surface-container p-3 rounded-lg border border-whisper-border font-code-mono text-code-mono text-muted-steel mt-4">
+                    def nas_objective(architecture):<br/>
+                      model = build(architecture)<br/>
+                      return train_and_eval(model)
+                </div>
+<p>Performance estimation strategy dictates how to evaluate a proposed architecture without fully training it to convergence.</p>
+</div>
+<!-- Panel Footer (Metadata) -->
+<div class="p-4 border-t border-whisper-border bg-surface-container-highest/50 flex flex-col gap-3">
+<div class="flex items-center justify-between font-label-mono text-label-mono text-muted-steel">
+<span>Created: 2023-10-24</span>
+<span>Modified: 2h ago</span>
+</div>
+<div class="flex flex-wrap gap-2">
+<span class="font-label-mono text-label-mono px-2 py-1 bg-surface-variant border border-whisper-border rounded-full text-on-surface">#AI</span>
+<span class="font-label-mono text-label-mono px-2 py-1 bg-surface-variant border border-whisper-border rounded-full text-on-surface">#ML</span>
+<span class="font-label-mono text-label-mono px-2 py-1 bg-surface-variant border border-whisper-border rounded-full text-on-surface">#Optimization</span>
+</div>
+</div>
+</div>
+</main>
+<!-- Mobile view overlay message (optional, as cockpit is dense) -->
+<div class="md:hidden fixed bottom-0 left-0 w-full p-4 z-50 flex justify-center pointer-events-none">
+<div class="bg-surface-container-high border border-whisper-border px-4 py-2 rounded-full font-label-mono text-label-mono text-electric-cyan shadow-lg backdrop-blur-md">
+            Rotate device for full cockpit view
+        </div>
+</div>
+</body></html>
