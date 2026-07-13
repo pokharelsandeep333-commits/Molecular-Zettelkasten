@@ -3,6 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { Mermaid } from './Mermaid';
 
 interface MarkdownRendererProps {
   content: string;
@@ -61,6 +62,10 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) =
                 {children}
               </code>
             );
+          }
+
+          if (language === 'mermaid') {
+            return <Mermaid chart={codeString} />;
           }
 
           return (
