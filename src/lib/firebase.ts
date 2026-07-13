@@ -11,6 +11,9 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-// Initialize Firebase
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-export const auth = getAuth(app);
+// Initialize Firebase ONLY on the client side to prevent Next.js SSR build crashes
+const app = typeof window !== 'undefined' && !getApps().length 
+  ? initializeApp(firebaseConfig) 
+  : typeof window !== 'undefined' ? getApp() : null;
+  
+export const auth = app ? getAuth(app) : null as any;
