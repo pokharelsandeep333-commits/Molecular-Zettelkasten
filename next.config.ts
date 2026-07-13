@@ -4,6 +4,7 @@ const nextConfig: NextConfig = {
   // Required for @xenova/transformers on the server (Next.js 15+)
   serverExternalPackages: ["@xenova/transformers", "sharp"],
   turbopack: {},
+  output: "standalone",
 };
 
 export default nextConfig;

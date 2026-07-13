@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  arc-vault:
+    image: pokharelsandeep333/molecular-zettelkasten:latest
+    container_name: arc-vault
+    restart: unless-stopped
+    ports:
+      - "80:3000"
+    environment:
+      # API Keys
+      - NEXT_PUBLIC_FIREBASE_API_KEY=${NEXT_PUBLIC_FIREBASE_API_KEY}
+      - NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=${NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN}
+      - NEXT_PUBLIC_FIREBASE_PROJECT_ID=${NEXT_PUBLIC_FIREBASE_PROJECT_ID}
+      - NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=${NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET}
+      - NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID}
+      - NEXT_PUBLIC_FIREBASE_APP_ID=${NEXT_PUBLIC_FIREBASE_APP_ID}
+      - NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=${NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      
+      # Vault mapping (points to the volume mount)
+      - VAULT_PATH=/app/vault
+      - SMART_ENV_PATH=/app/vault/.smart-env/multi
+    volumes:
+      # Mount the local EC2 vault folder to the container
+      - ./LLM-Wiki:/app/vault:ro
+
+  # Watchtower automatically updates containers when a new image is pushed to Docker Hub
+  watchtower:
+    image: containrrr/watchtower
+    container_name: watchtower
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --interval 300 arc-vault

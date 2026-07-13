@@ -1,0 +1,60 @@
+# ============================================================
+# 🚀 The Arc Vault — CI/CD Pipeline
+# ============================================================
+# WHAT THIS DOES:
+#   1. Triggers when you push code to the 'main' branch
+#   2. Builds a Docker image using the Next.js standalone Dockerfile
+#   3. Pushes the image to Docker Hub
+#   4. Watchtower on EC2 auto-detects and redeploys (within ~5 min)
+# ============================================================
+
+name: 🚀 Build & Push The Arc Vault to Docker Hub
+
+# ---- TRIGGERS ----
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# ---- JOBS ----
+jobs:
+  build-and-push:
+    name: 🐳 Build Docker Image & Push to Hub
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      - name: 🔧 Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        
+      - name: 🔐 Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          
+      - name: 🐳 Build and Push Docker Image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            pokharelsandeep333/molecular-zettelkasten:latest
+            pokharelsandeep333/molecular-zettelkasten:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # ---- Step 5: Summary ----
+      - name: 📋 Deployment Summary
+        run: |
+          echo "============================================="
+          echo "✅ Image pushed to Docker Hub!"
+          echo "   Image: pokharelsandeep333/molecular-zettelkasten:latest"
+          echo "   Commit: ${{ github.sha }}"
+          echo ""
+          echo "⏳ Watchtower will auto-deploy within ~5 minutes"
+          echo "   Container: arc-vault"
+          echo "============================================="
