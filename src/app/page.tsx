@@ -250,10 +250,6 @@ export default function Dashboard() {
       <LeftSidebar 
         onNodeClick={handleNodeClick}
         activeNoteSlug={activeNoteSlug}
-        searchQuery={searchQuery}
-        onSearch={handleSearch}
-        searchResults={searchResults}
-        isSearchLoading={isSearchLoading}
       />
       <MainContent 
         activeNoteDetail={activeNoteDetail}
