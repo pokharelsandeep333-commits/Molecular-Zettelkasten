@@ -52,7 +52,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) =
         ),
         code: ({ className, children, ...props }) => {
           const isBlock = className?.includes('language-');
-          const language = isBlock ? className.replace('language-', '') : '';
+          const language = isBlock && className ? className.replace('language-', '') : '';
           const codeString = String(children).replace(/\n$/, '');
           
           if (!isBlock) {

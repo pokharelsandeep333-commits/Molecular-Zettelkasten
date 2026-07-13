@@ -1,40 +1,133 @@
 # ============================================================
-# 🚀 The Arc Vault — CI/CD Pipeline
+# 🚀 The Arc Vault — Enhanced CI/CD Pipeline
 # ============================================================
-# WHAT THIS DOES:
-#   1. Triggers when you push code to the 'main' branch
-#   2. Builds a Docker image using the Next.js standalone Dockerfile
-#   3. Pushes the image to Docker Hub
-#   4. Watchtower on EC2 auto-detects and redeploys (within ~5 min)
+# GATES:
+#   1. Lint        → ESLint checks code quality
+#   2. Audit       → npm audit checks for vulnerable packages
+#   3. Secrets     → Gitleaks scans for exposed credentials
+#   4. Test        → Vitest runs unit tests
+#   5. Build+Push  → Docker image to Docker Hub
+#   6. Deploy      → Watchtower auto-detects (no action needed)
 # ============================================================
 
-name: 🚀 Build & Push The Arc Vault to Docker Hub
+name: 🚀 The Arc Vault CI/CD Pipeline
 
-# ---- TRIGGERS ----
 on:
   push:
     branches: [main]
+  pull_request:              # Also run checks on PRs (but DON'T push image)
+    branches: [main]
   workflow_dispatch:
 
-# ---- JOBS ----
 jobs:
-  build-and-push:
-    name: 🐳 Build Docker Image & Push to Hub
+  # ================================================================
+  # JOB 1: CODE QUALITY — Lint with ESLint
+  # ================================================================
+  lint:
+    name: 🔍 Code Quality (ESLint)
     runs-on: ubuntu-latest
-    
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
-      
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'         # Match your Dockerfile: node:20-alpine
+          cache: 'npm'               # Cache node_modules between runs
+
+      - name: 📦 Install dependencies
+        run: npm ci                  # Clean install from lockfile
+
+      - name: 🔍 Run ESLint
+        run: npm run lint            # Runs: eslint . (from your package.json)
+
+  # ================================================================
+  # JOB 2: DEPENDENCY AUDIT — Check for vulnerable packages
+  # ================================================================
+  audit:
+    name: 📦 Dependency Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🔍 Run npm audit
+        run: npm audit --audit-level=high
+
+  # ================================================================
+  # JOB 3: SECRET SCANNING — Detect exposed credentials
+  # ================================================================
+  secrets-scan:
+    name: 🔐 Secret Scanning (Gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0             # Fetch full git history so Gitleaks
+                                      # can scan ALL commits, not just latest
+
+      - name: 🔐 Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}    # Auto-provided by GitHub
+
+  # ================================================================
+  # JOB 4: TESTS — Run unit tests
+  # ================================================================
+  test:
+    name: 🧪 Run Tests (Vitest)
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🧪 Run tests
+        run: npm test
+
+  # ================================================================
+  # JOB 5: BUILD & PUSH — Docker image to Docker Hub
+  # ================================================================
+  build-and-push:
+    name: 🐳 Build & Push to Docker Hub
+    runs-on: ubuntu-latest
+    needs: [lint, audit, secrets-scan, test]    # ← The pipeline FAILS if any gate fails
+
+    # Only push on main branch (not on pull requests)
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
       - name: 🔧 Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-        
+
       - name: 🔐 Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-          
+
       - name: 🐳 Build and Push Docker Image
         uses: docker/build-push-action@v6
         with:
@@ -47,10 +140,10 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      # ---- Step 5: Summary ----
       - name: 📋 Deployment Summary
         run: |
           echo "============================================="
+          echo "✅ All quality gates passed!"
           echo "✅ Image pushed to Docker Hub!"
           echo "   Image: pokharelsandeep333/molecular-zettelkasten:latest"
           echo "   Commit: ${{ github.sha }}"
