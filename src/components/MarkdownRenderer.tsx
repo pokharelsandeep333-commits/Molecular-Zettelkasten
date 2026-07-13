@@ -32,13 +32,13 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) =
           <h3 className="text-sm font-semibold text-on-surface mt-4 mb-1">{children}</h3>
         ),
         p: ({ children }) => (
-          <p className="text-sm text-on-surface-variant leading-relaxed mb-3">{children}</p>
+          <p className="text-sm text-on-surface leading-relaxed mb-3">{children}</p>
         ),
         ul: ({ children }) => (
-          <ul className="list-disc pl-5 space-y-1 mb-3 text-sm text-on-surface-variant">{children}</ul>
+          <ul className="list-disc pl-5 space-y-1 mb-3 text-sm text-on-surface marker:text-on-surface-variant">{children}</ul>
         ),
         ol: ({ children }) => (
-          <ol className="list-decimal pl-5 space-y-1 mb-3 text-sm text-on-surface-variant">{children}</ol>
+          <ol className="list-decimal pl-5 space-y-1 mb-3 text-sm text-on-surface marker:text-on-surface-variant">{children}</ol>
         ),
         li: ({ children }) => <li className="leading-relaxed">{children}</li>,
         a: ({ href, children }) => (
