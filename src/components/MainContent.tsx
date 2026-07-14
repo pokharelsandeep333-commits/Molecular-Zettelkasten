@@ -1,7 +1,6 @@
 import React from 'react';
-import { Network, FileText, MessageSquare, Menu } from 'lucide-react';
-import { GraphView } from '@/components/GraphView';
-import type { GraphData } from '@/app/page';
+import { FileText, MessageSquare, Menu } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface NoteDetail {
   id: string;
@@ -14,34 +13,24 @@ interface NoteDetail {
 
 interface MainContentProps {
   activeNoteDetail: NoteDetail | null;
-  activeNoteSlug: string | null;
-  graphData: GraphData;
-  isGraphView: boolean;
-  setIsGraphView: (v: boolean) => void;
   isChatVisible: boolean;
   setIsChatVisible: (v: boolean) => void;
-  onNodeClick: (slug: string) => void;
   isLoadingNote?: boolean;
   setIsLeftSidebarOpen: (v: boolean) => void;
 }
 
 export const MainContent: React.FC<MainContentProps> = ({
   activeNoteDetail,
-  activeNoteSlug,
-  graphData,
-  isGraphView,
-  setIsGraphView,
   isChatVisible,
   setIsChatVisible,
-  onNodeClick,
   isLoadingNote,
   setIsLeftSidebarOpen
 }) => {
   return (
-    <div className="flex-1 min-w-0 h-full flex flex-col bg-surface-dim relative transition-all duration-300 ease-in-out">
+    <div className="flex-1 min-w-0 h-full flex flex-col bg-transparent relative transition-all duration-300 ease-in-out z-10">
       
       {/* Top Header */}
-      <div className="h-12 border-b border-whisper-border bg-surface-container/50 backdrop-blur-sm flex items-center justify-between px-4 md:px-6 shrink-0 z-10">
+      <div className="h-14 border-b border-[#00F0FF]/20 bg-transparent flex items-center justify-between px-4 md:px-6 shrink-0 z-10">
         <div className="flex items-center gap-3">
           <button 
             className="md:hidden text-muted-steel hover:text-electric-cyan transition-colors"
@@ -52,8 +41,8 @@ export const MainContent: React.FC<MainContentProps> = ({
           
           {activeNoteDetail ? (
             <div className="flex items-center gap-2">
-              <FileText size={16} className="text-electric-cyan shrink-0" />
-              <span className="font-tech text-electric-cyan tracking-wider truncate max-w-[120px] sm:max-w-xs md:max-w-xl text-sm">
+              <FileText size={16} className="text-[#00F0FF] shrink-0" />
+              <span className="font-tech text-[#00F0FF] tracking-wider truncate max-w-[120px] sm:max-w-xs md:max-w-xl text-sm">
                 {activeNoteDetail.title}
               </span>
             </div>
@@ -63,83 +52,68 @@ export const MainContent: React.FC<MainContentProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setIsGraphView(!isGraphView)}
-            className={`flex items-center gap-2 px-2 sm:px-3 py-1.5 rounded-md text-xs font-tech transition-colors border ${
-              isGraphView
-                ? 'bg-electric-cyan/20 border-electric-cyan/50 text-electric-cyan shadow-[0_0_10px_rgba(6,182,212,0.2)]'
-                : 'bg-surface-container border-whisper-border hover:border-electric-cyan/50 text-muted-steel hover:text-on-surface'
-            }`}
-            title="Toggle Network View"
-          >
-            <Network size={14} />
-            <span className="hidden sm:inline">{isGraphView ? 'CLOSE NETWORK' : 'NETWORK'}</span>
-          </button>
-          
-          <button
+          <button 
             onClick={() => setIsChatVisible(!isChatVisible)}
-            className={`flex items-center gap-2 px-2 sm:px-3 py-1.5 rounded-md text-xs font-tech transition-colors border ${
-              isChatVisible
-                ? 'bg-electric-cyan/20 border-electric-cyan/50 text-electric-cyan shadow-[0_0_10px_rgba(6,182,212,0.2)]'
-                : 'bg-surface-container border-whisper-border hover:border-electric-cyan/50 text-muted-steel hover:text-on-surface'
-            }`}
-            title="Toggle O.R.I.O.N."
+            className="flex items-center gap-2 text-xs font-tech tracking-wider text-electric-cyan hover:text-white transition-colors bg-[#00F0FF]/10 hover:bg-[#00F0FF]/20 px-3 py-1.5 rounded-full border border-[#00F0FF]/30 shadow-[0_0_10px_rgba(0,240,255,0.2)]"
+            title="Toggle E.D.I.T.H. (Cmd/Ctrl + \)"
           >
             <MessageSquare size={14} />
-            <span className="hidden sm:inline">{isChatVisible ? 'STANDBY O.R.I.O.N.' : 'ACTIVATE O.R.I.O.N.'}</span>
+            <span className="hidden sm:inline">{isChatVisible ? 'STANDBY E.D.I.T.H.' : 'ACTIVATE E.D.I.T.H.'}</span>
           </button>
         </div>
       </div>
 
       {/* Scrollable Body */}
-      <div className="flex-1 overflow-hidden relative">
-        {isGraphView ? (
-          <GraphView 
-            graphData={graphData} 
-            activeNoteSlug={activeNoteSlug} 
-            onNodeClick={onNodeClick} 
-          />
-        ) : (
-          <div className="h-full overflow-y-auto px-10 py-8">
-            {isLoadingNote ? (
-              <div className="max-w-3xl mx-auto flex flex-col gap-4 animate-pulse">
-                <div className="h-8 w-1/3 bg-electric-cyan/20 rounded-md shadow-[0_0_15px_rgba(6,182,212,0.1)] mb-4"></div>
-                <div className="h-4 w-full bg-surface-container-high rounded-md"></div>
-                <div className="h-4 w-5/6 bg-surface-container-high rounded-md"></div>
-                <div className="h-4 w-4/6 bg-surface-container-high rounded-md mb-4"></div>
-                <div className="h-32 w-full glass-panel opacity-50"></div>
-                <div className="h-4 w-full bg-surface-container-high rounded-md mt-4"></div>
-                <div className="h-4 w-3/4 bg-surface-container-high rounded-md"></div>
-              </div>
-            ) : activeNoteDetail ? (
-              <div className="max-w-3xl mx-auto transition-opacity duration-300">
+      <div className="flex-1 overflow-y-auto px-4 sm:px-10 py-8 relative z-10 custom-scrollbar">
+        {isLoadingNote ? (
+          <div className="max-w-3xl mx-auto flex flex-col gap-4 animate-pulse">
+            <div className="h-8 w-1/3 bg-[#00F0FF]/20 rounded-md shadow-[0_0_15px_rgba(0,240,255,0.1)] mb-4"></div>
+            <div className="h-4 w-full bg-[#30353e]/50 rounded-md"></div>
+            <div className="h-4 w-5/6 bg-[#30353e]/50 rounded-md"></div>
+            <div className="h-4 w-4/6 bg-[#30353e]/50 rounded-md mb-4"></div>
+            <div className="h-32 w-full bg-[#001E3C]/20 border border-[#00F0FF]/20 rounded-xl"></div>
+            <div className="h-4 w-full bg-[#30353e]/50 rounded-md mt-4"></div>
+            <div className="h-4 w-3/4 bg-[#30353e]/50 rounded-md"></div>
+          </div>
+        ) : activeNoteDetail ? (
+          <AnimatePresence mode="wait">
+            <motion.div 
+              key={activeNoteDetail.id}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="w-full"
+            >
+              <div className="w-full">
                 {activeNoteDetail.tags && activeNoteDetail.tags.length > 0 && (
-                  <div className="mb-6 flex flex-wrap gap-2">
+                  <div className="mb-8 flex flex-wrap gap-2">
                     {activeNoteDetail.tags.map((tag: string) => (
-                      <span key={tag} className="px-2 py-1 rounded-md bg-electric-cyan/10 border border-electric-cyan/30 text-xs font-tech tracking-wider uppercase text-electric-cyan shadow-[0_0_5px_rgba(6,182,212,0.2)]">
+                      <span key={tag} className="px-2.5 py-1 rounded-md bg-[#00F0FF]/10 border border-[#00F0FF]/30 text-xs font-mono tracking-wider uppercase text-[#00F0FF] shadow-[0_0_8px_rgba(0,240,255,0.15)]">
                         {tag}
                       </span>
                     ))}
                   </div>
                 )}
-                <div className="prose prose-invert prose-lg max-w-none text-on-surface">
+                
+                <div className="prose prose-invert prose-lg max-w-none text-white/90 prose-headings:font-tech prose-headings:text-white prose-a:text-[#00F0FF] prose-a:no-underline hover:prose-a:underline prose-code:text-[#00F0FF] prose-code:bg-[#00F0FF]/10 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:before:content-none prose-code:after:content-none">
                   {activeNoteDetail.content}
                 </div>
+                
                 <div className="mt-12 pt-6 border-t border-whisper-border flex justify-between text-xs text-muted-steel font-mono">
                   <span>Created: {activeNoteDetail.createdDate}</span>
                   <span>Modified: {activeNoteDetail.modifiedDate}</span>
                 </div>
               </div>
-            ) : (
-              <div className="h-full flex items-center justify-center text-muted-steel flex-col gap-4">
-                <FileText size={48} className="opacity-20" />
-                <p>Select a note from the left sidebar to view it.</p>
-              </div>
-            )}
+            </motion.div>
+          </AnimatePresence>
+        ) : (
+          <div className="h-full flex items-center justify-center text-muted-steel flex-col gap-4">
+            <FileText size={48} className="opacity-20" />
+            <p className="font-tech tracking-widest text-sm">AWAITING INPUT...</p>
           </div>
         )}
       </div>
-
     </div>
   );
 };

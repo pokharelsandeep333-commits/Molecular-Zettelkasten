@@ -4,43 +4,22 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
-import type { NoteMetadata } from '@/app/api/notes/route';
 import { LeftSidebar } from '@/components/LeftSidebar';
 import { MainContent } from '@/components/MainContent';
 import { ChatSidebar } from '@/components/ChatSidebar';
 import { MarkdownRenderer } from '@/components/MarkdownRenderer';
 import { OmniSearch } from '@/components/OmniSearch';
-
-export interface GraphNode {
-  id: string;
-  name: string;
-  group: string;
-  val: number;
-}
-export interface GraphLink {
-  source: string;
-  target: string;
-}
-export interface GraphData {
-  nodes: GraphNode[];
-  links: GraphLink[];
-}
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Dashboard() {
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-
-  // Search State has been moved to OmniSearch.tsx
 
   // Note State
   const [activeNoteSlug, setActiveNoteSlug] = useState<string | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [activeNoteDetail, setActiveNoteDetail] = useState<any>(null);
   const [isLoadingNote, setIsLoadingNote] = useState(false);
-
-  // Graph State
-  const [isGraphView, setIsGraphView] = useState(false);
-  const [graphData, setGraphData] = useState<GraphData>({ nodes: [], links: [] });
 
   // Chat State
   const [isChatVisible, setIsChatVisible] = useState(true);
@@ -52,11 +31,11 @@ export default function Dashboard() {
   useEffect(() => {
     try {
       const savedChat = localStorage.getItem('arc_chat_visible');
-      // eslint-disable-next-line
-      if (savedChat !== null) setIsChatVisible(savedChat === 'true');
-
-      const savedGraph = localStorage.getItem('arc_graph_view');
-      if (savedGraph !== null) setIsGraphView(savedGraph === 'true');
+       
+      if (savedChat !== null) {
+         
+        setTimeout(() => setIsChatVisible(savedChat === 'true'), 0);
+      }
     } catch {
       // Ignore local storage errors
     }
@@ -67,10 +46,6 @@ export default function Dashboard() {
     localStorage.setItem('arc_chat_visible', isChatVisible.toString());
   }, [isChatVisible]);
 
-  useEffect(() => {
-    localStorage.setItem('arc_graph_view', isGraphView.toString());
-  }, [isGraphView]);
-
   // Global Keyboard Shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -78,10 +53,6 @@ export default function Dashboard() {
       if ((e.metaKey || e.ctrlKey) && e.key === '\\') {
         e.preventDefault();
         setIsChatVisible(prev => !prev);
-      }
-      // ESC to close Graph
-      if (e.key === 'Escape') {
-        setIsGraphView(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -100,61 +71,11 @@ export default function Dashboard() {
     return () => unsubscribe();
   }, [router]);
 
-  // Build Graph Data from notes
-  const buildGraph = useCallback((notesToBuild: NoteMetadata[]) => {
-    const nodes: GraphNode[] = [];
-    const links: GraphLink[] = [];
-    const nodeIds = new Set<string>();
-
-    notesToBuild.forEach(note => {
-      if (!nodeIds.has(note.slug)) {
-        nodes.push({
-          id: note.slug,
-          name: note.title,
-          group: note.tags?.[0] || 'untyped',
-          val: 1
-        });
-        nodeIds.add(note.slug);
-      }
-    });
-
-    // Create edges based on shared tags
-    for (let i = 0; i < notesToBuild.length; i++) {
-      for (let j = i + 1; j < notesToBuild.length; j++) {
-        const t1 = notesToBuild[i].tags || [];
-        const t2 = notesToBuild[j].tags || [];
-        if (t1.some(t => t2.includes(t))) {
-          links.push({
-            source: notesToBuild[i].slug,
-            target: notesToBuild[j].slug,
-          });
-        }
-      }
-    }
-
-    setGraphData({ nodes, links });
-  }, []);
-
-  // Search functionality is now completely handled within OmniSearch.tsx
-
-  // Load all notes for graph on mount
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetch('/api/notes?limit=500')
-        .then(r => r.json())
-        .then(data => {
-          if (data.notes) buildGraph(data.notes);
-        });
-    }
-  }, [isAuthenticated, buildGraph]);
-
   // Handle Node Selection
   const handleNodeClick = useCallback(async (slug: string) => {
     setActiveNoteSlug(slug);
     setIsLoadingNote(true);
     localStorage.setItem('arc_active_note', slug);
-    // If graph view is active, turn it off so they can read the note
-    setIsGraphView(false);
     try {
       const encodedSlug = slug.split('/').map(encodeURIComponent).join('/');
       const res = await fetch(`/api/notes/${encodedSlug}`);
@@ -194,11 +115,14 @@ export default function Dashboard() {
   }, [isAuthenticated, handleNodeClick, activeNoteSlug]);
 
   if (isAuthenticated === null) {
-    return <div className="min-h-screen bg-abyssal-bg flex items-center justify-center text-muted-steel">Authenticating...</div>;
+    return <div className="min-h-screen bg-[#02050C] flex items-center justify-center text-muted-steel font-tech tracking-widest">INITIALIZING SECURE CONNECTION...</div>;
   }
 
   return (
-    <div className="h-screen w-full bg-abyssal-bg text-on-surface font-sans overflow-hidden flex">
+    <div className="h-screen w-full bg-[#02050C] text-on-surface font-sans overflow-hidden flex relative z-0">
+      {/* Global Cyan Grid Background */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#00F0FF08_1px,transparent_1px),linear-gradient(to_bottom,#00F0FF08_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none z-0" />
+      
       <OmniSearch onSelectNote={handleNodeClick} />
       
       <LeftSidebar 
@@ -209,18 +133,25 @@ export default function Dashboard() {
       />
       <MainContent 
         activeNoteDetail={activeNoteDetail}
-        activeNoteSlug={activeNoteSlug}
-        graphData={graphData}
-        isGraphView={isGraphView}
-        setIsGraphView={setIsGraphView}
         isChatVisible={isChatVisible}
         setIsChatVisible={setIsChatVisible}
-        onNodeClick={handleNodeClick}
         isLoadingNote={isLoadingNote}
         setIsLeftSidebarOpen={setIsLeftSidebarOpen}
       />
       
-      {isChatVisible && <ChatSidebar onNodeClick={handleNodeClick} setIsChatVisible={setIsChatVisible} />}
+      <AnimatePresence>
+        {isChatVisible && (
+          <motion.div
+            initial={{ width: 0, opacity: 0 }}
+            animate={{ width: 400, opacity: 1 }}
+            exit={{ width: 0, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 400, damping: 40 }}
+            className="h-full shrink-0 z-20 overflow-hidden"
+          >
+            <ChatSidebar onNodeClick={handleNodeClick} setIsChatVisible={setIsChatVisible} />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

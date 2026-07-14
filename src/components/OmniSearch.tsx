@@ -94,7 +94,7 @@ export const OmniSearch: React.FC<OmniSearchProps> = ({ onSelectNote }) => {
             type="text"
             value={query}
             onChange={(e) => handleSearch(e.target.value)}
-            placeholder="Search The Arc Vault..."
+            placeholder="Search the Neural Matrix..."
             className="flex-1 bg-transparent text-xl text-pure-ink outline-none font-tech placeholder-muted-steel"
           />
           {isLoading && <Loader2 className="animate-spin text-electric-cyan" size={20} />}

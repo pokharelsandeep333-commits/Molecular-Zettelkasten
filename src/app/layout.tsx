@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "The Arc Vault",
-  description: "A private semantic knowledge graph for your Obsidian vault.",
+  title: "Neural Matrix",
+  description: "A secure, specialized personal knowledge base.",
 };
 
 export default function RootLayout({

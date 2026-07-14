@@ -21,24 +21,24 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) =
       remarkPlugins={[remarkGfm]}
       components={{
         h1: ({ children }) => (
-          <h1 className="text-xl font-bold text-on-surface mt-6 mb-3 first:mt-0 pb-2 border-b border-whisper-border">
+          <h1 className="text-2xl font-bold text-on-surface mt-6 mb-4 first:mt-0 pb-2 border-b border-whisper-border">
             {children}
           </h1>
         ),
         h2: ({ children }) => (
-          <h2 className="text-base font-semibold text-on-surface mt-5 mb-2">{children}</h2>
+          <h2 className="text-xl font-semibold text-on-surface mt-6 mb-3">{children}</h2>
         ),
         h3: ({ children }) => (
-          <h3 className="text-sm font-semibold text-on-surface mt-4 mb-1">{children}</h3>
+          <h3 className="text-lg font-semibold text-on-surface mt-5 mb-2">{children}</h3>
         ),
         p: ({ children }) => (
-          <p className="text-sm text-on-surface leading-relaxed mb-3">{children}</p>
+          <p className="text-base text-on-surface leading-relaxed mb-4">{children}</p>
         ),
         ul: ({ children }) => (
-          <ul className="list-disc pl-5 space-y-1 mb-3 text-sm text-on-surface marker:text-on-surface-variant">{children}</ul>
+          <ul className="list-disc pl-6 space-y-2 mb-4 text-base text-on-surface marker:text-on-surface-variant">{children}</ul>
         ),
         ol: ({ children }) => (
-          <ol className="list-decimal pl-5 space-y-1 mb-3 text-sm text-on-surface marker:text-on-surface-variant">{children}</ol>
+          <ol className="list-decimal pl-6 space-y-2 mb-4 text-base text-on-surface marker:text-on-surface-variant">{children}</ol>
         ),
         li: ({ children }) => <li className="leading-relaxed">{children}</li>,
         a: ({ href, children }) => (
