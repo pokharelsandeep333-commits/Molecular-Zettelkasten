@@ -1,5 +1,6 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -18,3 +19,5 @@ const app = typeof window !== 'undefined' && !getApps().length
   
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const auth = app ? getAuth(app) : null as any;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const db = app ? getFirestore(app) : null as any;

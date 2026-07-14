@@ -4,11 +4,12 @@ import { promises as fs } from 'fs';
 import path from 'path';
 
 const VAULT_PATH = process.env.VAULT_PATH || '';
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
 const client = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
 });
+
+import { performSemanticSearch } from '../search/route';
 
 async function getRelevantContext(query: string) {
   try {
@@ -26,16 +27,13 @@ Keep it under 20 words. Do NOT answer the question. Just output the search terms
     const optimizedQuery = hydeRes.output_text || query;
     const searchQuery = optimizedQuery;
 
-    // Call our semantic search API
-    const res = await fetch(`${API_URL}/api/search?q=${encodeURIComponent(searchQuery)}&limit=5`);
-    if (!res.ok) return [];
-    
-    const data = await res.json();
-    if (!data.results || data.results.length === 0) return [];
+    // Call our semantic search API natively to bypass Docker loopback networking issues
+    const results = await performSemanticSearch(searchQuery, 5);
+    if (!results || results.length === 0) return [];
 
     // Extract the valid slugs
     const matchedSlugs = Array.from(new Set<string>(
-      (data.results as { key: string }[])
+      results
         .map(r => {
           let k = r.key;
           k = k.replace(/^smart_\w+:/, '');

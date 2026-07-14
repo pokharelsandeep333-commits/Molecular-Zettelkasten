@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useRef, useEffect, useState } from 'react';
-import { Send, Loader2, ChevronDown, Plus, Aperture, Fingerprint, Network, ChevronRight, MoreVertical, Trash2 } from 'lucide-react';
+import { Send, Loader2, ChevronDown, Plus, Aperture, Fingerprint, Network, ChevronRight, MoreVertical, Trash2, Cloud } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import { useAuth } from '@/context/AuthContext';
+import { saveChatSessionsToCloud, loadChatSessionsFromCloud } from '@/lib/firestoreChat';
 
 const SESSIONS_STORAGE_KEY = 'mz_chat_sessions';
 
@@ -25,6 +27,9 @@ interface ChatSidebarProps {
 }
 
 export const ChatSidebar: React.FC<ChatSidebarProps> = ({ onNodeClick, setIsChatVisible, activeNoteSlug }) => {
+  const { user } = useAuth();
+  const [isSyncing, setIsSyncing] = useState(false);
+
   const [activeTab, setActiveTab] = useState<'chat' | 'context'>('chat');
   const [selectedModel, setSelectedModel] = useState('gemini-3.5-flash');
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
@@ -76,6 +81,29 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ onNodeClick, setIsChat
   }, [setMessages]);
 
   useEffect(() => {
+    if (!user || !isLoaded) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsSyncing(true);
+    loadChatSessionsFromCloud(user.uid).then(cloudSessions => {
+      if (cloudSessions && cloudSessions.length > 0) {
+        setSessions(cloudSessions);
+        const mostRecent = [...cloudSessions].sort((a, b) => b.updatedAt - a.updatedAt)[0];
+        setActiveSessionId(mostRecent.id);
+        activeSessionIdRef.current = mostRecent.id;
+        setMessages(mostRecent.messages);
+        localStorage.setItem(SESSIONS_STORAGE_KEY, JSON.stringify(cloudSessions));
+      } else {
+        // If cloud is empty, sync local storage to cloud
+        const local = localStorage.getItem(SESSIONS_STORAGE_KEY);
+        if (local) {
+          const parsed = JSON.parse(local);
+          saveChatSessionsToCloud(user.uid, parsed);
+        }
+      }
+    }).finally(() => setIsSyncing(false));
+  }, [user, isLoaded]);
+
+  useEffect(() => {
     if (isLoaded && activeSessionIdRef.current) {
       setSessions(prev => {
         const next = [...prev];
@@ -94,10 +122,17 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ onNodeClick, setIsChat
           next[idx] = { ...next[idx], messages, title, updatedAt: getNow() };
         }
         localStorage.setItem(SESSIONS_STORAGE_KEY, JSON.stringify(next));
+        
+        // Sync to cloud if authenticated
+        if (user) {
+          setIsSyncing(true);
+          saveChatSessionsToCloud(user.uid, next).finally(() => setIsSyncing(false));
+        }
+
         return next;
       });
     }
-  }, [messages, isLoaded]);
+  }, [messages, isLoaded, user]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -155,6 +190,12 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ onNodeClick, setIsChat
         activeSessionIdRef.current = next[0].id;
         setMessages(next[0].messages);
       }
+      
+      if (user) {
+        setIsSyncing(true);
+        saveChatSessionsToCloud(user.uid, next).finally(() => setIsSyncing(false));
+      }
+      
       return next;
     });
     setContextMenu(null);
@@ -163,11 +204,18 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ onNodeClick, setIsChat
   const handleClearAllHistory = (e: React.MouseEvent) => {
     e.stopPropagation();
     const newSession: ChatSession = { id: generateId(), title: 'New Chat', messages: [], updatedAt: getNow() };
-    setSessions([newSession]);
+    const next = [newSession];
+    setSessions(next);
     setActiveSessionId(newSession.id);
     activeSessionIdRef.current = newSession.id;
     setMessages([]);
-    localStorage.setItem(SESSIONS_STORAGE_KEY, JSON.stringify([newSession]));
+    localStorage.setItem(SESSIONS_STORAGE_KEY, JSON.stringify(next));
+    
+    if (user) {
+      setIsSyncing(true);
+      saveChatSessionsToCloud(user.uid, next).finally(() => setIsSyncing(false));
+    }
+    
     setIsHistoryOpen(false);
   };
 
@@ -214,6 +262,10 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ onNodeClick, setIsChat
           if (idx !== -1) {
             next[idx] = { ...next[idx], interactionId: data.interactionId };
             localStorage.setItem(SESSIONS_STORAGE_KEY, JSON.stringify(next));
+            if (user) {
+              setIsSyncing(true);
+              saveChatSessionsToCloud(user.uid, next).finally(() => setIsSyncing(false));
+            }
           }
           return next;
         });
@@ -269,6 +321,15 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ onNodeClick, setIsChat
 
         {/* Action Icons */}
         <div className="flex items-center gap-1 shrink-0 relative">
+          {user && (
+            <div className="mr-2 flex items-center text-[9px] font-mono tracking-widest text-[#00F0FF]/40 uppercase">
+              {isSyncing ? (
+                <span className="flex items-center gap-1 animate-pulse text-[#00F0FF]"><Cloud size={10} /> Sync</span>
+              ) : (
+                <span className="flex items-center gap-1"><Cloud size={10} /> Saved</span>
+              )}
+            </div>
+          )}
           <button onClick={createNewChat} className="p-1.5 hover:bg-[#00F0FF]/10 rounded transition-colors text-[#00F0FF]/60 hover:text-[#00F0FF] border border-transparent hover:border-[#00F0FF]/30" title="New Chat">
             <Plus size={16} />
           </button>
