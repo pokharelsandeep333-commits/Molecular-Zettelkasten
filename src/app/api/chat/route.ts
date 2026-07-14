@@ -102,17 +102,12 @@ CRITICAL INSTRUCTIONS:
 
 ${contextString}`;
 
-    const config: any = {
+    const interaction = await client.interactions.create({
       model: aiModel,
       input,
       system_instruction: systemInstruction,
-    };
-
-    if (previous_interaction_id) {
-      config.previous_interaction_id = previous_interaction_id;
-    }
-
-    const interaction = await client.interactions.create(config);
+      ...(previous_interaction_id ? { previous_interaction_id } : {})
+    });
 
     return NextResponse.json({
       text: interaction.output_text,

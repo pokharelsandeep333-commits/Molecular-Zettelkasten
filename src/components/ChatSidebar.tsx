@@ -9,8 +9,7 @@ const SESSIONS_STORAGE_KEY = 'mz_chat_sessions';
 export interface ChatSession {
   id: string;
   title: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  messages: any[];
+  messages: Array<{ id: string; role: string; content: string }>;
   interactionId?: string | null;
   updatedAt: number;
 }
@@ -25,7 +24,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ onNodeClick, setIsChat
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
   
   // Manual State Replacement for useChat
-  const [messages, setMessages] = useState<any[]>([]);
+  const [messages, setMessages] = useState<Array<{ id: string; role: string; content: string }>>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<{ message: string } | null>(null);
@@ -61,12 +60,12 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ onNodeClick, setIsChat
     setSessions(loadedSessions);
     
     const mostRecent = [...loadedSessions].sort((a, b) => b.updatedAt - a.updatedAt)[0];
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+     
     setActiveSessionId(mostRecent.id);
     activeSessionIdRef.current = mostRecent.id;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+     
     setMessages(mostRecent.messages);
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+     
     setIsLoaded(true);
   }, [setMessages]);
 
@@ -172,8 +171,9 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ onNodeClick, setIsChat
         });
       }
 
-    } catch (err: any) {
-      setError({ message: err.message || 'An error occurred' });
+    } catch (err: unknown) {
+      const e = err as Error;
+      setError({ message: e.message || 'An error occurred' });
     } finally {
       setIsLoading(false);
     }
