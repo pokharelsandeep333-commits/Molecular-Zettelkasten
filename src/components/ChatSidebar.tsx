@@ -180,7 +180,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ onNodeClick, setIsChat
   };
 
   return (
-    <div className="h-full flex flex-col bg-[#001E3C]/40 backdrop-blur-md text-gray-200 shrink-0 w-[400px] border-l border-[#00F0FF]/30 shadow-[-10px_0_30px_rgba(0,240,255,0.05)] relative z-10">
+    <div className="h-full flex flex-col bg-[#001E3C]/40 backdrop-blur-md text-gray-200 shrink-0 w-full md:w-[400px] border-l border-[#00F0FF]/30 shadow-[-10px_0_30px_rgba(0,240,255,0.05)] relative z-10">
       
       {/* Top Header Controls (Unique EDITH style) */}
       <div className="h-14 flex items-center justify-between px-4 shrink-0 relative z-10 border-b border-[#00F0FF]/20">

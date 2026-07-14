@@ -26,6 +26,14 @@ export default function Dashboard() {
 
   // Mobile Layout State
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile(); // Initial check
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Load Persisted State on Mount
   useEffect(() => {
@@ -142,11 +150,11 @@ export default function Dashboard() {
       <AnimatePresence>
         {isChatVisible && (
           <motion.div
-            initial={{ width: 0, opacity: 0 }}
-            animate={{ width: 400, opacity: 1 }}
-            exit={{ width: 0, opacity: 0 }}
+            initial={isMobile ? { x: "100%", opacity: 0 } : { width: 0, opacity: 0 }}
+            animate={isMobile ? { x: 0, opacity: 1 } : { width: 400, opacity: 1 }}
+            exit={isMobile ? { x: "100%", opacity: 0 } : { width: 0, opacity: 0 }}
             transition={{ type: "spring", stiffness: 400, damping: 40 }}
-            className="h-full shrink-0 z-20 overflow-hidden"
+            className={`h-full shrink-0 z-50 overflow-hidden ${isMobile ? 'fixed inset-y-0 right-0 w-full' : 'relative z-20'}`}
           >
             <ChatSidebar onNodeClick={handleNodeClick} setIsChatVisible={setIsChatVisible} />
           </motion.div>
