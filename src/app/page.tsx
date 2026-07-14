@@ -22,7 +22,7 @@ export default function Dashboard() {
   const [isLoadingNote, setIsLoadingNote] = useState(false);
 
   // Chat State
-  const [isChatVisible, setIsChatVisible] = useState(true);
+  const [isChatVisible, setIsChatVisible] = useState(false);
 
   // Mobile Layout State
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(false);
@@ -35,17 +35,18 @@ export default function Dashboard() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Load Persisted State on Mount
   useEffect(() => {
     try {
       const savedChat = localStorage.getItem('arc_chat_visible');
-       
       if (savedChat !== null) {
-         
         setTimeout(() => setIsChatVisible(savedChat === 'true'), 0);
+      } else {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setIsChatVisible(window.innerWidth >= 768);
       }
     } catch {
-      // Ignore local storage errors
+       
+      setIsChatVisible(true);
     }
   }, []);
 
@@ -156,7 +157,11 @@ export default function Dashboard() {
             transition={{ type: "spring", stiffness: 400, damping: 40 }}
             className={`h-full shrink-0 z-50 overflow-hidden ${isMobile ? 'fixed inset-y-0 right-0 w-full' : 'relative z-20'}`}
           >
-            <ChatSidebar onNodeClick={handleNodeClick} setIsChatVisible={setIsChatVisible} />
+            <ChatSidebar 
+              onNodeClick={handleNodeClick} 
+              setIsChatVisible={setIsChatVisible} 
+              activeNoteSlug={activeNoteSlug}
+            />
           </motion.div>
         )}
       </AnimatePresence>

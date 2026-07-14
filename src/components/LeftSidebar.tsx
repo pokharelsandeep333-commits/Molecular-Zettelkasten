@@ -95,7 +95,7 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
       )}
 
       {/* Sidebar Content */}
-      <div className={`fixed inset-y-0 left-0 w-[280px] h-full flex flex-col bg-[#001E3C]/40 backdrop-blur-md border-r border-[#00F0FF]/20 shrink-0 z-10 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${
+      <div className={`fixed inset-y-0 left-0 w-[280px] h-full flex flex-col bg-[#001E3C]/40 backdrop-blur-md border-r border-[#00F0FF]/20 shrink-0 z-50 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${
         isLeftSidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'
       }`}>
       

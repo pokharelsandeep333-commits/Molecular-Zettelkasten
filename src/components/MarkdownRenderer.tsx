@@ -9,7 +9,7 @@ interface MarkdownRendererProps {
   content: string;
 }
 
-export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) => {
+export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content = '' }) => {
   // Strip Obsidian wikilinks [[Note]] → Note, and ![[embed]] → (embedded)
   const cleaned = content
     .replace(/!\[\[([^\]]+)\]\]/g, '') // remove embedded note syntax
