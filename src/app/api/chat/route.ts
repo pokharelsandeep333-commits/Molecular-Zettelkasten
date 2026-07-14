@@ -11,24 +11,48 @@ const client = new GoogleGenAI({
 
 import { performSemanticSearch } from '../search/route';
 
+function stripMarkdown(text: string): string {
+  return text
+    // Remove images
+    .replace(/!\[.*?\]\(.*?\)/g, '')
+    // Remove plain URLs
+    .replace(/https?:\/\/[^\s]+/g, '')
+    // Remove markdown links but keep text
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1')
+    // Remove excessive whitespace/newlines
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 async function getRelevantContext(query: string) {
   try {
-    // 1. Query Expansion / HyDE using stateless interaction
-    const hydeRes = await client.interactions.create({
-      model: 'gemini-3.5-flash',
-      input: `You are an AI generating a search query for a semantic vector database.
+    let optimizedQuery = query;
+    const wordCount = query.trim().split(/\s+/).length;
+
+    // 1. Adaptive Query Expansion (HyDE) - only for short vague queries
+    if (wordCount < 15) {
+      try {
+        const hydeRes = await client.interactions.create({
+          model: 'gemini-3.5-flash',
+          input: `You are an AI generating a search query for a semantic vector database.
 The user's chat message is: "${query}"
 Generate a hypothetical document snippet or a list of highly specific keywords that would contain the answer. 
 For example, if they ask "what is my name?", you might output "My name is, user profile, memory, personal information".
 Keep it under 20 words. Do NOT answer the question. Just output the search terms.`,
-      store: false,
-    });
+          store: false,
+        });
+        if (hydeRes.output_text) {
+          optimizedQuery = hydeRes.output_text;
+        }
+      } catch (err) {
+        console.warn('HyDE failed, falling back to original query', err);
+      }
+    }
 
-    const optimizedQuery = hydeRes.output_text || query;
     const searchQuery = optimizedQuery;
 
-    // Call our semantic search API natively to bypass Docker loopback networking issues
-    const results = await performSemanticSearch(searchQuery, 5);
+    // Call our semantic search API natively (reduced from 5 to 3 for rate limits)
+    const results = await performSemanticSearch(searchQuery, 3);
     if (!results || results.length === 0) return [];
 
     // Extract the valid slugs
@@ -46,11 +70,12 @@ Keep it under 20 words. Do NOT answer the question. Just output the search terms
 
     // Read the actual file contents for context
     const contexts = [];
-    for (const slug of matchedSlugs.slice(0, 5)) {
+    for (const slug of matchedSlugs.slice(0, 3)) {
       try {
         const actualPath = path.join(VAULT_PATH, `${slug}.md`);
         const content = await fs.readFile(actualPath, 'utf-8');
-        contexts.push(`--- Note: ${slug} ---\n${content}`);
+        const strippedContent = stripMarkdown(content);
+        contexts.push(`--- Note: ${slug} ---\n${strippedContent}`);
       } catch {
         console.warn('Could not read file for context:', slug);
       }
