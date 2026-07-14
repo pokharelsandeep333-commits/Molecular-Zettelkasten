@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useRef, useEffect, useState } from 'react';
-import { useChat } from 'ai/react';
 import { Send, Loader2, ChevronDown, Plus, MoreVertical, Aperture, Fingerprint } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
@@ -12,6 +11,7 @@ export interface ChatSession {
   title: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   messages: any[];
+  interactionId?: string | null;
   updatedAt: number;
 }
 
@@ -23,10 +23,12 @@ interface ChatSidebarProps {
 export const ChatSidebar: React.FC<ChatSidebarProps> = ({ onNodeClick, setIsChatVisible }) => {
   const [selectedModel, setSelectedModel] = useState('gemini-3.5-flash');
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
-  const { messages, setMessages, input, setInput, handleInputChange, handleSubmit, isLoading, error } = useChat({
-    api: '/api/chat',
-    body: { model: selectedModel },
-  });
+  
+  // Manual State Replacement for useChat
+  const [messages, setMessages] = useState<any[]>([]);
+  const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<{ message: string } | null>(null);
 
   const [isLoaded, setIsLoaded] = useState(false);
   const [sessions, setSessions] = useState<ChatSession[]>([]);
@@ -119,6 +121,61 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ onNodeClick, setIsChat
       setActiveSessionId(session.id);
       activeSessionIdRef.current = session.id;
       setMessages(session.messages);
+    }
+  };
+
+  const handleSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (!input.trim() || isLoading) return;
+
+    const userMessage = { id: Date.now().toString(), role: 'user', content: input };
+    setMessages(prev => [...prev, userMessage]);
+    setInput('');
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const activeSession = sessions.find(s => s.id === activeSessionIdRef.current);
+      
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          input: userMessage.content,
+          model: selectedModel,
+          previous_interaction_id: activeSession?.interactionId || undefined
+        })
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to fetch response');
+      }
+
+      const data = await res.json();
+      
+      setMessages(prev => [...prev, {
+        id: Date.now().toString() + '_ai',
+        role: 'assistant',
+        content: data.text
+      }]);
+
+      if (data.interactionId) {
+        setSessions(prev => {
+          const next = [...prev];
+          const idx = next.findIndex(s => s.id === activeSessionIdRef.current);
+          if (idx !== -1) {
+            next[idx] = { ...next[idx], interactionId: data.interactionId };
+            localStorage.setItem(SESSIONS_STORAGE_KEY, JSON.stringify(next));
+          }
+          return next;
+        });
+      }
+
+    } catch (err: any) {
+      setError({ message: err.message || 'An error occurred' });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -228,7 +285,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ onNodeClick, setIsChat
                         }
                       }}
                     >
-                      {m.content.replace(/\[\[([^\]]+)\]\]/g, (match, title) => {
+                      {m.content.replace(/\[\[([^\]]+)\]\]/g, (match: string, title: string) => {
                         return `[${title}](#${encodeURIComponent(title)})`;
                       })}
                     </ReactMarkdown>
@@ -265,12 +322,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ onNodeClick, setIsChat
           <textarea
             value={input || ''}
             onChange={(e) => {
-              if (handleInputChange) {
-                // @ts-expect-error - Fake an event for handleInputChange which expects standard input
-                handleInputChange({ target: { value: e.target.value } });
-              } else {
-                setInput(e.target.value);
-              }
+              setInput(e.target.value);
               // Auto-resize
               e.target.style.height = 'auto';
               e.target.style.height = Math.min(e.target.scrollHeight, 200) + 'px';

@@ -1,30 +1,30 @@
 import { NextResponse } from 'next/server';
-import { streamText, generateText } from 'ai';
-import { createGoogleGenerativeAI } from '@ai-sdk/google';
+import { GoogleGenAI } from '@google/genai';
 import { promises as fs } from 'fs';
 import path from 'path';
 
 const VAULT_PATH = process.env.VAULT_PATH || '';
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'; // Need base URL for internal fetch
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
-const google = createGoogleGenerativeAI({
+const client = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
 });
 
-// Function to fetch search results from our existing endpoint
 async function getRelevantContext(query: string) {
   try {
-    // 1. Query Expansion / HyDE: Convert a question into statements/keywords for better vector matching
-    const { text: optimizedQuery } = await generateText({
-      model: google('gemini-3.5-flash'),
-      prompt: `You are an AI generating a search query for a semantic vector database.
+    // 1. Query Expansion / HyDE using stateless interaction
+    const hydeRes = await client.interactions.create({
+      model: 'gemini-3.5-flash',
+      input: `You are an AI generating a search query for a semantic vector database.
 The user's chat message is: "${query}"
 Generate a hypothetical document snippet or a list of highly specific keywords that would contain the answer. 
 For example, if they ask "what is my name?", you might output "My name is, user profile, memory, personal information".
 Keep it under 20 words. Do NOT answer the question. Just output the search terms.`,
+      store: false,
     });
 
-    const searchQuery = optimizedQuery || query;
+    const optimizedQuery = hydeRes.output_text || query;
+    const searchQuery = optimizedQuery;
 
     // Call our semantic search API
     const res = await fetch(`${API_URL}/api/search?q=${encodeURIComponent(searchQuery)}&limit=5`);
@@ -40,7 +40,6 @@ Keep it under 20 words. Do NOT answer the question. Just output the search terms
           let k = r.key;
           k = k.replace(/^smart_\w+:/, '');
           k = k.split('#')[0];
-          // We DO NOT strip ^Wiki/ anymore so we can handle Raw/ and other top-level folders
           k = k.replace(/\.md$/, '');
           return k.trim();
         })
@@ -68,8 +67,7 @@ Keep it under 20 words. Do NOT answer the question. Just output the search terms
 
 export async function POST(req: Request) {
   try {
-    const { messages, model } = await req.json();
-    const lastMessage = messages[messages.length - 1];
+    const { input, previous_interaction_id, model } = await req.json();
     const aiModel = model || 'gemini-3.5-flash';
 
     if (!process.env.GEMINI_API_KEY) {
@@ -79,13 +77,20 @@ export async function POST(req: Request) {
       );
     }
 
+    if (!input) {
+      return NextResponse.json(
+        { error: 'Input is required.' },
+        { status: 400 }
+      );
+    }
+
     // Retrieve context from the vault using semantic search
-    const contexts = await getRelevantContext(lastMessage.content);
+    const contexts = await getRelevantContext(input);
     const contextString = contexts.length > 0 
       ? `\n\nRELEVANT VAULT NOTES:\n${contexts.join('\n\n')}`
       : '\n\nNo relevant vault notes found for this query.';
 
-    const systemPrompt = `You are E.D.I.T.H., a highly advanced, Stark-inspired AI assistant for the Neural Matrix.
+    const systemInstruction = `You are E.D.I.T.H., a highly advanced, Stark-inspired AI assistant for the Neural Matrix.
 Your purpose is to help the user (Sandeep) navigate, understand, and synthesize their personal knowledge base.
 You have a crisp, highly technical, slightly formal, and efficient personality.
 You are currently providing a contextual answer based on the following relevant notes retrieved from the Neural Matrix:
@@ -97,64 +102,37 @@ CRITICAL INSTRUCTIONS:
 
 ${contextString}`;
 
-    // Stream the response from Gemini
-    const result = await streamText({
-      model: google(aiModel),
-      system: systemPrompt,
-      messages,
-    });
+    const config: any = {
+      model: aiModel,
+      input,
+      system_instruction: systemInstruction,
+    };
 
-    return result.toDataStreamResponse();
+    if (previous_interaction_id) {
+      config.previous_interaction_id = previous_interaction_id;
+    }
+
+    const interaction = await client.interactions.create(config);
+
+    return NextResponse.json({
+      text: interaction.output_text,
+      interactionId: interaction.id,
+    });
   } catch (error: unknown) {
     console.error('Chat API Error:', error);
     const err = error as Error;
     
     // Handle Gemini API Quota Limits gracefully
     if (err?.message?.includes('Quota exceeded') || err?.message?.includes('429')) {
-      let timeString = 'a few minutes';
-      const retryMatch = err.message.match(/retry in ([\d.]+)s/);
-      let isDaily = false;
-
-      if (retryMatch) {
-        const totalSeconds = Math.ceil(parseFloat(retryMatch[1]));
-        if (totalSeconds >= 3600) isDaily = true; // Wait times > 1hr are definitely daily limits
-
-        if (totalSeconds < 60) {
-          timeString = `${totalSeconds} seconds`;
-        } else if (totalSeconds < 3600) {
-          const m = Math.floor(totalSeconds / 60);
-          const s = totalSeconds % 60;
-          timeString = s > 0 ? `${m} minute${m !== 1 ? 's' : ''} and ${s} second${s !== 1 ? 's' : ''}` : `${m} minute${m !== 1 ? 's' : ''}`;
-        } else if (totalSeconds < 86400) {
-          const h = Math.floor(totalSeconds / 3600);
-          const m = Math.floor((totalSeconds % 3600) / 60);
-          timeString = m > 0 ? `${h} hour${h !== 1 ? 's' : ''} and ${m} minute${m !== 1 ? 's' : ''}` : `${h} hour${h !== 1 ? 's' : ''}`;
-        } else {
-          const d = Math.floor(totalSeconds / 86400);
-          const h = Math.floor((totalSeconds % 86400) / 3600);
-          timeString = h > 0 ? `${d} day${d !== 1 ? 's' : ''} and ${h} hour${h !== 1 ? 's' : ''}` : `${d} day${d !== 1 ? 's' : ''}`;
-        }
-      }
-
-      // Try to extract the limit value to provide more context
-      const limitMatch = err.message ? err.message.match(/limit: (\d+)/) : null;
-      let limitContext = '';
-      if (limitMatch) {
-        const limitVal = parseInt(limitMatch[1], 10);
-        if (limitVal >= 1000 || isDaily) {
-          limitContext = `(Daily Limit: ${limitVal} requests).`;
-        } else {
-          limitContext = `(Short-term Limit: ${limitVal} requests).`;
-        }
-      } else {
-        limitContext = isDaily ? `(Daily Limit Reached).` : `(Rate Limit Reached).`;
-      }
-
-      return new Response(`API Quota Exhausted ${limitContext} Please wait ${timeString} before trying again.`, { 
-        status: 429 
-      });
+      return NextResponse.json(
+        { error: 'API Quota Exhausted. Please wait before trying again.' },
+        { status: 429 }
+      );
     }
 
-    return new Response(err.message || 'Failed to process chat request', { status: 500 });
+    return NextResponse.json(
+      { error: err.message || 'Failed to process chat request' },
+      { status: 500 }
+    );
   }
 }
