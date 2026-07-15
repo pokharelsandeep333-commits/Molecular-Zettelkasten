@@ -31,7 +31,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ onNodeClick, setIsChat
   const [isSyncing, setIsSyncing] = useState(false);
 
   const [activeTab, setActiveTab] = useState<'chat' | 'context'>('chat');
-  const [selectedModel, setSelectedModel] = useState('gemini-3.5-flash');
+  const [selectedModel, setSelectedModel] = useState('gemini-1.5-flash');
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
   
   // Manual State Replacement for useChat
@@ -230,15 +230,18 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ onNodeClick, setIsChat
     setError(null);
 
     try {
-      const activeSession = sessions.find(s => s.id === activeSessionIdRef.current);
-      
+      const recentHistory = messages.slice(-4).map(m => ({
+        role: m.role,
+        content: m.content
+      }));
+
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           input: userMessage.content,
           model: selectedModel,
-          previous_interaction_id: activeSession?.interactionId || undefined
+          history: recentHistory
         })
       });
 

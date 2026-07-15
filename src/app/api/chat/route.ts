@@ -33,7 +33,7 @@ async function getRelevantContext(query: string) {
     if (wordCount < 15) {
       try {
         const hydeRes = await client.interactions.create({
-          model: 'gemini-3.5-flash',
+          model: 'gemini-1.5-flash-8b',
           input: `You are an AI generating a search query for a semantic vector database.
 The user's chat message is: "${query}"
 Generate a hypothetical document snippet or a list of highly specific keywords that would contain the answer. 
@@ -74,7 +74,7 @@ Keep it under 20 words. Do NOT answer the question. Just output the search terms
       try {
         const actualPath = path.join(VAULT_PATH, `${slug}.md`);
         const content = await fs.readFile(actualPath, 'utf-8');
-        const strippedContent = stripMarkdown(content);
+        const strippedContent = stripMarkdown(content).slice(0, 3000);
         contexts.push(`--- Note: ${slug} ---\n${strippedContent}`);
       } catch {
         console.warn('Could not read file for context:', slug);
@@ -90,8 +90,8 @@ Keep it under 20 words. Do NOT answer the question. Just output the search terms
 
 export async function POST(req: Request) {
   try {
-    const { input, previous_interaction_id, model } = await req.json();
-    const aiModel = model || 'gemini-3.5-flash';
+    const { input, history, model } = await req.json();
+    const aiModel = model || 'gemini-1.5-flash';
 
     if (!process.env.GEMINI_API_KEY) {
       return NextResponse.json(
@@ -106,6 +106,11 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
+
+    // Format chat history into a string
+    const historyString = (history || [])
+      .map((msg: { role: string; content: string }) => `${msg.role.toUpperCase()}: ${msg.content}`)
+      .join('\n\n');
 
     // Retrieve context from the vault using semantic search
     const contexts = await getRelevantContext(input);
@@ -125,16 +130,19 @@ CRITICAL INSTRUCTIONS:
 
 ${contextString}`;
 
+    const finalInput = historyString 
+      ? `[Conversation History]\n${historyString}\n\n[New Message]\nUSER: ${input}`
+      : input;
+
     const interaction = await client.interactions.create({
       model: aiModel,
-      input,
+      input: finalInput,
       system_instruction: systemInstruction,
-      ...(previous_interaction_id ? { previous_interaction_id } : {})
+      store: false, // Stateless interaction to prevent memory bloat
     });
 
     return NextResponse.json({
       text: interaction.output_text,
-      interactionId: interaction.id,
     });
   } catch (error: unknown) {
     console.error('Chat API Error:', error);
