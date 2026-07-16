@@ -31,7 +31,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ onNodeClick, setIsChat
   const [isSyncing, setIsSyncing] = useState(false);
 
   const [activeTab, setActiveTab] = useState<'chat' | 'context'>('chat');
-  const [selectedModel, setSelectedModel] = useState('gemini-1.5-flash');
+  const [selectedModel, setSelectedModel] = useState('gemini-3.5-flash');
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
   
   // Manual State Replacement for useChat

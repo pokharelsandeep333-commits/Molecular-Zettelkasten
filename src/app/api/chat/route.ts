@@ -33,7 +33,7 @@ async function getRelevantContext(query: string) {
     if (wordCount < 15) {
       try {
         const hydeRes = await client.interactions.create({
-          model: 'gemini-1.5-flash-8b',
+          model: 'gemini-3.5-flash-8b',
           input: `You are an AI generating a search query for a semantic vector database.
 The user's chat message is: "${query}"
 Generate a hypothetical document snippet or a list of highly specific keywords that would contain the answer. 
@@ -91,7 +91,7 @@ Keep it under 20 words. Do NOT answer the question. Just output the search terms
 export async function POST(req: Request) {
   try {
     const { input, history, model } = await req.json();
-    const aiModel = model || 'gemini-1.5-flash';
+    const aiModel = model || 'gemini-3.5-flash';
 
     if (!process.env.GEMINI_API_KEY) {
       return NextResponse.json(
