@@ -103,36 +103,13 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ onNodeClick, setIsChat
     }).finally(() => setIsSyncing(false));
   }, [user, isLoaded]);
 
-  useEffect(() => {
-    if (isLoaded && activeSessionIdRef.current) {
-      setSessions(prev => {
-        const next = [...prev];
-        const currentId = activeSessionIdRef.current;
-        const idx = next.findIndex(s => s.id === currentId);
-        
-        let title = 'New Chat';
-        if (messages.length > 0) {
-          const firstUserMsg = messages.find(m => m.role === 'user');
-          if (firstUserMsg) {
-            title = firstUserMsg.content.slice(0, 30) + (firstUserMsg.content.length > 30 ? '...' : '');
-          }
-        }
-
-        if (idx !== -1) {
-          next[idx] = { ...next[idx], messages, title, updatedAt: getNow() };
-        }
-        localStorage.setItem(SESSIONS_STORAGE_KEY, JSON.stringify(next));
-        
-        // Sync to cloud if authenticated
-        if (user) {
-          setIsSyncing(true);
-          saveChatSessionsToCloud(user.uid, next).finally(() => setIsSyncing(false));
-        }
-
-        return next;
-      });
+  const persistSessions = (nextSessions: ChatSession[]) => {
+    localStorage.setItem(SESSIONS_STORAGE_KEY, JSON.stringify(nextSessions));
+    if (user) {
+      setIsSyncing(true);
+      saveChatSessionsToCloud(user.uid, nextSessions).finally(() => setIsSyncing(false));
     }
-  }, [messages, isLoaded, user]);
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -156,7 +133,11 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ onNodeClick, setIsChat
       messages: [],
       updatedAt: getNow()
     };
-    setSessions(prev => [newSession, ...prev]);
+    setSessions(prev => {
+      const next = [newSession, ...prev];
+      persistSessions(next);
+      return next;
+    });
     setActiveSessionId(newSession.id);
     activeSessionIdRef.current = newSession.id;
     setMessages([]);
@@ -184,18 +165,13 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ onNodeClick, setIsChat
       if (next.length === 0) {
         next.push({ id: generateId(), title: 'New Chat', messages: [], updatedAt: getNow() });
       }
-      localStorage.setItem(SESSIONS_STORAGE_KEY, JSON.stringify(next));
       if (activeSessionId === id || activeSessionIdRef.current === id) {
         setActiveSessionId(next[0].id);
         activeSessionIdRef.current = next[0].id;
         setMessages(next[0].messages);
       }
       
-      if (user) {
-        setIsSyncing(true);
-        saveChatSessionsToCloud(user.uid, next).finally(() => setIsSyncing(false));
-      }
-      
+      persistSessions(next);
       return next;
     });
     setContextMenu(null);
@@ -209,12 +185,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ onNodeClick, setIsChat
     setActiveSessionId(newSession.id);
     activeSessionIdRef.current = newSession.id;
     setMessages([]);
-    localStorage.setItem(SESSIONS_STORAGE_KEY, JSON.stringify(next));
-    
-    if (user) {
-      setIsSyncing(true);
-      saveChatSessionsToCloud(user.uid, next).finally(() => setIsSyncing(false));
-    }
+    persistSessions(next);
     
     setIsHistoryOpen(false);
   };
@@ -224,7 +195,25 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ onNodeClick, setIsChat
     if (!input.trim() || isLoading) return;
 
     const userMessage = { id: generateId(), role: 'user', content: input };
-    setMessages(prev => [...prev, userMessage]);
+    
+    setMessages(prev => {
+      const nextMsgs = [...prev, userMessage];
+      setSessions(prevSessions => {
+        const next = [...prevSessions];
+        const idx = next.findIndex(s => s.id === activeSessionIdRef.current);
+        if (idx !== -1) {
+          let title = next[idx].title;
+          if (nextMsgs.length === 1) {
+             title = userMessage.content.slice(0, 30) + (userMessage.content.length > 30 ? '...' : '');
+          }
+          next[idx] = { ...next[idx], messages: nextMsgs, title, updatedAt: getNow() };
+          persistSessions(next);
+        }
+        return next;
+      });
+      return nextMsgs;
+    });
+    
     setInput('');
     setIsLoading(true);
     setError(null);
@@ -252,27 +241,28 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ onNodeClick, setIsChat
 
       const data = await res.json();
       
-      setMessages(prev => [...prev, {
-        id: generateId() + '_ai',
-        role: 'assistant',
-        content: data.text
-      }]);
-
-      if (data.interactionId) {
-        setSessions(prev => {
-          const next = [...prev];
+      setMessages(prev => {
+        const nextMsgs = [...prev, {
+          id: generateId() + '_ai',
+          role: 'assistant',
+          content: data.text
+        }];
+        
+        setSessions(prevSessions => {
+          const next = [...prevSessions];
           const idx = next.findIndex(s => s.id === activeSessionIdRef.current);
           if (idx !== -1) {
-            next[idx] = { ...next[idx], interactionId: data.interactionId };
-            localStorage.setItem(SESSIONS_STORAGE_KEY, JSON.stringify(next));
-            if (user) {
-              setIsSyncing(true);
-              saveChatSessionsToCloud(user.uid, next).finally(() => setIsSyncing(false));
+            next[idx] = { ...next[idx], messages: nextMsgs, updatedAt: getNow() };
+            if (data.interactionId) {
+              next[idx].interactionId = data.interactionId;
             }
+            persistSessions(next);
           }
           return next;
         });
-      }
+        
+        return nextMsgs;
+      });
 
     } catch (err: unknown) {
       const e = err as Error;
