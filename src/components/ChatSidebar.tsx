@@ -4,7 +4,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { Send, Loader2, ChevronDown, Plus, Aperture, Fingerprint, Network, ChevronRight, MoreVertical, Trash2, Cloud } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { useAuth } from '@/context/AuthContext';
-import { saveChatSessionsToCloud, loadChatSessionsFromCloud } from '@/lib/firestoreChat';
+import { saveChatSessionsToCloud, loadChatSessionsFromCloud, subscribeToChatSessions } from '@/lib/firestoreChat';
 
 const SESSIONS_STORAGE_KEY = 'mz_chat_sessions';
 
@@ -84,13 +84,20 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ onNodeClick, setIsChat
     if (!user || !isLoaded) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsSyncing(true);
-    loadChatSessionsFromCloud(user.uid).then(cloudSessions => {
+    
+    const unsubscribe = subscribeToChatSessions(user.uid, (cloudSessions) => {
       if (cloudSessions && cloudSessions.length > 0) {
         setSessions(cloudSessions);
-        const mostRecent = [...cloudSessions].sort((a, b) => b.updatedAt - a.updatedAt)[0];
-        setActiveSessionId(mostRecent.id);
-        activeSessionIdRef.current = mostRecent.id;
-        setMessages(mostRecent.messages);
+        
+        // Ensure active session is valid and messages match
+        let currentActive = cloudSessions.find(s => s.id === activeSessionIdRef.current);
+        if (!currentActive) {
+          currentActive = [...cloudSessions].sort((a, b) => b.updatedAt - a.updatedAt)[0];
+          setActiveSessionId(currentActive.id);
+          activeSessionIdRef.current = currentActive.id;
+        }
+        setMessages(currentActive.messages);
+        
         localStorage.setItem(SESSIONS_STORAGE_KEY, JSON.stringify(cloudSessions));
       } else {
         // If cloud is empty, sync local storage to cloud
@@ -100,7 +107,10 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ onNodeClick, setIsChat
           saveChatSessionsToCloud(user.uid, parsed);
         }
       }
-    }).finally(() => setIsSyncing(false));
+      setIsSyncing(false);
+    });
+
+    return () => unsubscribe();
   }, [user, isLoaded]);
 
   const persistSessions = (nextSessions: ChatSession[]) => {
