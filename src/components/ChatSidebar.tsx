@@ -4,7 +4,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { Send, Loader2, ChevronDown, Plus, Aperture, Fingerprint, Network, ChevronRight, MoreVertical, Trash2, Cloud } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { useAuth } from '@/context/AuthContext';
-import { saveChatSessionsToCloud, loadChatSessionsFromCloud, subscribeToChatSessions } from '@/lib/firestoreChat';
+import { saveChatSessionsToCloud, subscribeToChatSessions } from '@/lib/firestoreChat';
 
 const SESSIONS_STORAGE_KEY = 'mz_chat_sessions';
 
@@ -99,13 +99,6 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ onNodeClick, setIsChat
         setMessages(currentActive.messages);
         
         localStorage.setItem(SESSIONS_STORAGE_KEY, JSON.stringify(cloudSessions));
-      } else {
-        // If cloud is empty, sync local storage to cloud
-        const local = localStorage.getItem(SESSIONS_STORAGE_KEY);
-        if (local) {
-          const parsed = JSON.parse(local);
-          saveChatSessionsToCloud(user.uid, parsed);
-        }
       }
       setIsSyncing(false);
     });
