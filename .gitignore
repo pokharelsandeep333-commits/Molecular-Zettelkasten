@@ -43,3 +43,6 @@ next-env.d.ts
 
 # AI Agents
 .agents/
+
+# Stitch
+.stitch/
