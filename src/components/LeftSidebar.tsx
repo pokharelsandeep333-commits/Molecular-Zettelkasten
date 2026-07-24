@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Folder, FolderOpen, FileText, Search, ChevronRight, ChevronDown } from 'lucide-react';
+import { Folder, FolderOpen, FileText, Search, ChevronRight, ChevronDown, LogOut } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 import type { TreeNode } from '@/app/api/tree/route';
 
 interface LeftSidebarProps {
@@ -75,6 +76,7 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
   setIsLeftSidebarOpen
 }) => {
   const [treeData, setTreeData] = useState<TreeNode[]>([]);
+  const { user, logout } = useAuth();
 
   useEffect(() => {
     fetch('/api/tree')
@@ -139,7 +141,39 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
           ))}
         </div>
       </div>
+
+      {/* User Profile + Logout */}
+      {user && (
+        <div className="shrink-0 border-t border-[#00F0FF]/20 px-4 py-3">
+          <div className="flex items-center gap-3">
+            {user.photoURL ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img 
+                src={user.photoURL} 
+                alt="Profile" 
+                className="w-8 h-8 rounded-full border border-[#00F0FF]/40 shadow-[0_0_8px_rgba(0,240,255,0.2)] shrink-0"
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-[#00F0FF]/20 border border-[#00F0FF]/40 flex items-center justify-center shrink-0 text-[#00F0FF] text-xs font-bold">
+                {user.displayName?.charAt(0) || user.email?.charAt(0) || '?'}
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] text-white/90 font-medium truncate">{user.displayName || 'User'}</p>
+              <p className="text-[9px] text-[#00F0FF]/40 font-mono tracking-wider truncate">{user.email}</p>
+            </div>
+            <button
+              onClick={logout}
+              className="p-1.5 rounded-md text-[#00F0FF]/40 hover:text-red-400 hover:bg-red-500/10 transition-colors shrink-0"
+              title="Sign Out"
+            >
+              <LogOut size={14} />
+            </button>
+          </div>
+        </div>
+      )}
       </div>
     </>
   );
 };
+
