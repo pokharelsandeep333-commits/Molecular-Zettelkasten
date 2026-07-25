@@ -32,4 +32,4 @@ services:
     restart: always
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-    command: --interval 300 arc-vault
+    command: --interval 60 arc-vault
