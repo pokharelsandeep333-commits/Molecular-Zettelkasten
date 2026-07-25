@@ -25,11 +25,3 @@ services:
       # Mount the local EC2 vault folder to the container
       - ./LLM-Wiki:/app/vault:ro
 
-  # Watchtower automatically updates containers when a new image is pushed to Docker Hub
-  watchtower:
-    image: containrrr/watchtower
-    container_name: watchtower
-    restart: always
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    command: --interval 60 arc-vault
