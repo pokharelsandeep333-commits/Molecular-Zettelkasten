@@ -31,8 +31,6 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ onNodeClick, setIsChat
   const [isSyncing, setIsSyncing] = useState(false);
 
   const [activeTab, setActiveTab] = useState<'chat' | 'context'>('chat');
-  const [selectedModel, setSelectedModel] = useState('gemini-3.5-flash');
-  const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
   
   // Manual State Replacement for useChat
   const [messages, setMessages] = useState<Array<{ id: string; role: string; content: string }>>([]);
@@ -232,7 +230,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ onNodeClick, setIsChat
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           input: userMessage.content,
-          model: selectedModel,
+          model: 'gemini-3.6-flash',
           history: recentHistory
         })
       });
@@ -511,37 +509,6 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ onNodeClick, setIsChat
                 className="w-full bg-transparent border-none py-1.5 px-2 text-[12px] text-[#00F0FF] placeholder:text-[#00F0FF]/30 focus:outline-none resize-none max-h-[200px] custom-scrollbar font-mono uppercase tracking-wide leading-relaxed"
                 style={{ minHeight: '32px' }}
               />
-              {/* Model Selector (Inside Input, Left of Send) */}
-              <div className="relative shrink-0 ml-1">
-                <button 
-                  type="button"
-                  onClick={(e) => { e.preventDefault(); setIsModelDropdownOpen(!isModelDropdownOpen); }}
-                  className="flex items-center gap-1 hover:bg-[#00F0FF]/10 px-1.5 py-1 rounded transition-all text-[9px] font-mono tracking-widest text-[#00F0FF]/40 hover:text-[#00F0FF]/80"
-                  title="Select Model"
-                >
-                  <span>{selectedModel === 'gemini-3.5-flash' ? '3.5' : '2.5'}</span>
-                  <ChevronDown size={10} />
-                </button>
-                
-                {isModelDropdownOpen && (
-                  <div className="absolute bottom-full right-0 mb-2 w-32 bg-[#02050C] border border-[#00F0FF]/30 rounded shadow-[0_-4px_20px_rgba(0,240,255,0.15)] overflow-hidden z-50">
-                    <button 
-                      type="button"
-                      onClick={(e) => { e.preventDefault(); setSelectedModel('gemini-3.5-flash'); setIsModelDropdownOpen(false); }}
-                      className="w-full text-left px-3 py-2 hover:bg-[#00F0FF]/20 text-[10px] text-[#00F0FF] font-mono tracking-widest uppercase transition-colors"
-                    >
-                      3.5 Flash
-                    </button>
-                    <button 
-                      type="button"
-                      onClick={(e) => { e.preventDefault(); setSelectedModel('gemini-2.5-flash'); setIsModelDropdownOpen(false); }}
-                      className="w-full text-left px-3 py-2 hover:bg-[#00F0FF]/20 text-[10px] text-[#00F0FF] font-mono tracking-widest uppercase transition-colors"
-                    >
-                      2.5 Flash
-                    </button>
-                  </div>
-                )}
-              </div>
 
               <button 
                 type="submit" 
