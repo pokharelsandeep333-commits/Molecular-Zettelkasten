@@ -1,6 +1,7 @@
 import React from 'react';
 import { FileText, MessageSquare, Menu } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowUp } from 'lucide-react';
 
 interface NoteDetail {
   id: string;
@@ -17,6 +18,8 @@ interface MainContentProps {
   setIsChatVisible: (v: boolean) => void;
   isLoadingNote?: boolean;
   setIsLeftSidebarOpen: (v: boolean) => void;
+  isLeftSidebarOpen: boolean;
+  children?: React.ReactNode;
 }
 
 export const MainContent: React.FC<MainContentProps> = ({
@@ -24,19 +27,34 @@ export const MainContent: React.FC<MainContentProps> = ({
   isChatVisible,
   setIsChatVisible,
   isLoadingNote,
-  setIsLeftSidebarOpen
+  setIsLeftSidebarOpen,
+  isLeftSidebarOpen,
+  children
 }) => {
+  const [scrollTop, setScrollTop] = React.useState(0);
+  const scrollRef = React.useRef<HTMLDivElement>(null);
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    setScrollTop(e.currentTarget.scrollTop);
+  };
+
+  const scrollToTop = () => {
+    scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <div className="flex-1 min-w-0 h-full flex flex-col bg-transparent relative transition-all duration-300 ease-in-out z-10">
+      {children}
       
       {/* Top Header */}
       <div className="h-14 border-b border-[#00F0FF]/20 bg-transparent flex items-center justify-between px-4 md:px-6 shrink-0 z-10">
         <div className="flex items-center gap-3">
           <button 
-            className="md:hidden text-muted-steel hover:text-electric-cyan transition-colors"
+            className={`p-2 -ml-2 text-muted-steel hover:text-electric-cyan transition-colors ${isLeftSidebarOpen ? 'md:hidden' : ''}`}
             onClick={() => setIsLeftSidebarOpen(true)}
+            title="Open Sidebar"
           >
-            <Menu size={18} />
+            <Menu size={20} />
           </button>
           
           {activeNoteDetail ? (
@@ -64,7 +82,11 @@ export const MainContent: React.FC<MainContentProps> = ({
       </div>
 
       {/* Scrollable Body */}
-      <div className="flex-1 overflow-y-auto px-4 sm:px-10 py-8 relative z-10 custom-scrollbar">
+      <div 
+        ref={scrollRef}
+        onScroll={handleScroll}
+        className="flex-1 overflow-y-auto px-4 sm:px-10 py-8 relative z-10 custom-scrollbar"
+      >
         {isLoadingNote ? (
           <div className="max-w-3xl mx-auto flex flex-col gap-4 animate-pulse">
             <div className="h-8 w-1/3 bg-[#00F0FF]/20 rounded-md shadow-[0_0_15px_rgba(0,240,255,0.1)] mb-4"></div>
@@ -114,6 +136,21 @@ export const MainContent: React.FC<MainContentProps> = ({
           </div>
         )}
       </div>
+
+      <AnimatePresence>
+        {scrollTop > 300 && (
+          <motion.button
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            onClick={scrollToTop}
+            className="absolute bottom-8 right-8 p-3 rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/30 text-[#00F0FF] hover:bg-[#00F0FF] hover:text-[#02050C] transition-colors shadow-[0_0_15px_rgba(0,240,255,0.2)] z-50 backdrop-blur-sm"
+            title="Scroll to Top"
+          >
+            <ArrowUp size={20} />
+          </motion.button>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

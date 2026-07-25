@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Folder, FolderOpen, FileText, Search, ChevronRight, ChevronDown, LogOut } from 'lucide-react';
+import { Folder, FolderOpen, FileText, Search, ChevronRight, ChevronDown, LogOut, PanelLeftClose } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import type { TreeNode } from '@/app/api/tree/route';
 
@@ -97,13 +97,21 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
       )}
 
       {/* Sidebar Content */}
-      <div className={`fixed inset-y-0 left-0 w-[280px] h-full flex flex-col bg-[#001E3C]/40 backdrop-blur-md border-r border-[#00F0FF]/20 shrink-0 z-50 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${
-        isLeftSidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'
+      <div className={`fixed inset-y-0 left-0 h-full flex flex-col bg-[#001E3C]/40 backdrop-blur-md border-[#00F0FF]/20 shrink-0 z-50 transition-all duration-300 ease-in-out md:relative overflow-hidden ${
+        isLeftSidebarOpen ? 'translate-x-0 shadow-2xl w-[280px] border-r' : '-translate-x-full md:translate-x-0 w-[280px] md:w-0 border-r-0'
       }`}>
+      <div className="w-[280px] min-w-[280px] h-full flex flex-col">
       
       {/* App Header */}
-      <div className="h-14 flex items-center px-5 shrink-0 border-b border-[#00F0FF]/20">
+      <div className="h-14 flex items-center justify-between px-5 shrink-0 border-b border-[#00F0FF]/20">
         <span className="font-tech text-transparent bg-clip-text bg-gradient-to-r from-[#00F0FF] to-white tracking-widest text-lg font-bold">NEURAL MATRIX</span>
+        <button
+          onClick={() => setIsLeftSidebarOpen(false)}
+          className="text-[#00F0FF]/60 hover:text-[#00F0FF] transition-colors p-1 rounded-md hover:bg-[#00F0FF]/10 hidden md:flex"
+          title="Collapse Sidebar"
+        >
+          <PanelLeftClose size={18} />
+        </button>
       </div>
 
       {/* Top Header */}
@@ -134,7 +142,9 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
               level={0}
               onNodeClick={(slug) => {
                 onNodeClick(slug);
-                setIsLeftSidebarOpen(false); // Close on mobile after click
+                if (window.innerWidth < 768) {
+                  setIsLeftSidebarOpen(false);
+                }
               }}
               activeNoteSlug={activeNoteSlug}
             />
@@ -172,6 +182,7 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
           </div>
         </div>
       )}
+      </div>
       </div>
     </>
   );

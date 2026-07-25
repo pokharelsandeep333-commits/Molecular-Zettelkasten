@@ -118,10 +118,6 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ onNodeClick, setIsChat
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
   const createNewChat = () => {
     const activeSession = sessions.find(s => s.id === activeSessionIdRef.current);
     if (activeSession && activeSession.messages.length === 0) {
@@ -182,6 +178,8 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ onNodeClick, setIsChat
 
   const handleClearAllHistory = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!window.confirm("Are you sure you want to clear all chat history? This cannot be undone.")) return;
+    
     const newSession: ChatSession = { id: generateId(), title: 'New Chat', messages: [], updatedAt: getNow() };
     const next = [newSession];
     setSessions(next);
@@ -220,6 +218,8 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ onNodeClick, setIsChat
     setInput('');
     setIsLoading(true);
     setError(null);
+    
+    setTimeout(scrollToBottom, 50);
 
     try {
       const recentHistory = messages.slice(-4).map(m => ({
@@ -244,9 +244,11 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ onNodeClick, setIsChat
 
       const data = await res.json();
       
+      const aiId = generateId() + '_ai';
+      
       setMessages(prev => {
         const nextMsgs = [...prev, {
-          id: generateId() + '_ai',
+          id: aiId,
           role: 'assistant',
           content: data.text
         }];
@@ -266,6 +268,13 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ onNodeClick, setIsChat
         
         return nextMsgs;
       });
+
+      setTimeout(() => {
+        const el = document.getElementById(`msg-${aiId}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 50);
 
     } catch (err: unknown) {
       const e = err as Error;
@@ -417,7 +426,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ onNodeClick, setIsChat
 
             {messages.map((m) => {
               return (
-                <div key={m.id} className="flex gap-4">
+                <div key={m.id} id={`msg-${m.id}`} className="flex gap-4">
                   {m.role === 'user' ? (
                     <div className="w-full flex justify-end">
                       <div className="bg-[#00F0FF]/10 text-white border border-[#00F0FF]/40 rounded-md px-5 py-3 max-w-[85%] text-[15px] leading-relaxed shadow-[0_0_10px_rgba(0,240,255,0.1)]">

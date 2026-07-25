@@ -22,10 +22,10 @@ export default function Dashboard() {
   const [isLoadingNote, setIsLoadingNote] = useState(false);
 
   // Chat State
-  const [isChatVisible, setIsChatVisible] = useState(false);
+  const [isChatVisible, setIsChatVisible] = useState(true);
 
   // Mobile Layout State
-  const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(false);
+  const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -44,9 +44,18 @@ export default function Dashboard() {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setIsChatVisible(window.innerWidth >= 768);
       }
+
+      const savedSidebar = localStorage.getItem('arc_sidebar_visible');
+      if (savedSidebar !== null) {
+        setTimeout(() => setIsLeftSidebarOpen(savedSidebar === 'true'), 0);
+      } else {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setIsLeftSidebarOpen(window.innerWidth >= 768);
+      }
     } catch {
        
       setIsChatVisible(true);
+      setIsLeftSidebarOpen(true);
     }
   }, []);
 
@@ -55,6 +64,10 @@ export default function Dashboard() {
     localStorage.setItem('arc_chat_visible', isChatVisible.toString());
   }, [isChatVisible]);
 
+  useEffect(() => {
+    localStorage.setItem('arc_sidebar_visible', isLeftSidebarOpen.toString());
+  }, [isLeftSidebarOpen]);
+
   // Global Keyboard Shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -62,6 +75,11 @@ export default function Dashboard() {
       if ((e.metaKey || e.ctrlKey) && e.key === '\\') {
         e.preventDefault();
         setIsChatVisible(prev => !prev);
+      }
+      // CMD+B or CTRL+B to toggle Left Sidebar
+      if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
+        e.preventDefault();
+        setIsLeftSidebarOpen(prev => !prev);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -85,6 +103,19 @@ export default function Dashboard() {
     setActiveNoteSlug(slug);
     setIsLoadingNote(true);
     localStorage.setItem('arc_active_note', slug);
+    
+    // Update Recent Files
+    try {
+      const recentStr = localStorage.getItem('arc_recent_files');
+      let recent = recentStr ? JSON.parse(recentStr) : [];
+      recent = recent.filter((s: string) => s !== slug);
+      recent.unshift(slug);
+      if (recent.length > 5) recent = recent.slice(0, 5);
+      localStorage.setItem('arc_recent_files', JSON.stringify(recent));
+    } catch (e) {
+      console.error('Failed to update recent files', e);
+    }
+    
     try {
       const encodedSlug = slug.split('/').map(encodeURIComponent).join('/');
       const res = await fetch(`/api/notes/${encodedSlug}`);
@@ -132,8 +163,6 @@ export default function Dashboard() {
       {/* Global Cyan Grid Background */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#00F0FF08_1px,transparent_1px),linear-gradient(to_bottom,#00F0FF08_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none z-0" />
       
-      <OmniSearch onSelectNote={handleNodeClick} />
-      
       <LeftSidebar 
         onNodeClick={handleNodeClick}
         activeNoteSlug={activeNoteSlug}
@@ -146,7 +175,10 @@ export default function Dashboard() {
         setIsChatVisible={setIsChatVisible}
         isLoadingNote={isLoadingNote}
         setIsLeftSidebarOpen={setIsLeftSidebarOpen}
-      />
+        isLeftSidebarOpen={isLeftSidebarOpen}
+      >
+        <OmniSearch onSelectNote={handleNodeClick} />
+      </MainContent>
       
       <AnimatePresence>
         {isChatVisible && (
