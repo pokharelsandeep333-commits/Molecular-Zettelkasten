@@ -23,8 +23,8 @@ By giving the AI direct access to your personal knowledge base, it can continuou
 
 ## ✨ Core Features
 
-*   **E.D.I.T.H. AI Assistant:** Powered by `@google/genai` and the state-of-the-art **Gemini Interactions API** (`gemini-3.5-flash`). E.D.I.T.H. features native server-side memory (`previous_interaction_id`) for lightning-fast, multi-turn conversations.
-*   **Semantic RAG (Neural Matrix):** Seamlessly connects to your Obsidian Vault. E.D.I.T.H. uses **HyDE (Hypothetical Document Embeddings)** via `gemini-3.5-flash-8b` to run background vector searches against your notes, citing sources directly in her responses.
+*   **E.D.I.T.H. AI Assistant:** Powered by `@google/genai` and the state-of-the-art **Gemini Interactions API** (`gemini-3.6-flash`). E.D.I.T.H. features an optimized, token-saving custom memory system that restricts context bloat on long conversations.
+*   **Semantic RAG (Neural Matrix):** Seamlessly connects to your Obsidian Vault. E.D.I.T.H. uses **HyDE (Hypothetical Document Embeddings)** via `gemini-3.5-flash-lite` to run background vector searches against your notes, citing sources directly in her responses.
 *   **Stark-Tech UI/UX:** A bespoke, hardware-accelerated interface featuring responsive glassmorphic sidebars, `Geist` typography, and a signature cyan (`#00F0FF`) glowing aesthetic powered by Framer Motion.
 *   **Firebase Integration:** Secure Firebase Authentication ensures only authorized access. Firestore is used to persistently sync chat sessions across devices.
 *   **Full-Text Markdown Rendering:** Native rendering of Obsidian-flavored markdown, including clickable wikilinks (`[[Note Name]]`), Mermaid diagrams, and code syntax highlighting.
@@ -32,7 +32,7 @@ By giving the AI direct access to your personal knowledge base, it can continuou
 ## 🚀 Technology Stack
 
 *   **Frontend / Framework:** Next.js 16 (App Router, Server Components), React 19
-*   **AI Engine:** Google Gemini Interactions API (`gemini-3.5-flash`, `gemini-3.5-flash-8b`)
+*   **AI Engine:** Google Gemini Interactions API (`gemini-3.6-flash`, `gemini-3.5-flash-lite`)
 *   **Styling & UI:** Tailwind CSS v4 + Custom CSS Variables + Framer Motion
 *   **Database & Auth:** Firebase Auth & Firestore
 *   **Markdown:** `react-markdown`, `remark-gfm`, `react-syntax-highlighter`
