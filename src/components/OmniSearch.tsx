@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Search, Loader2, X } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { NoteMetadata } from '@/app/api/notes/route';
 
@@ -45,10 +45,10 @@ export const OmniSearch: React.FC<OmniSearchProps> = ({ onSelectNote }) => {
       setTimeout(() => inputRef.current?.focus(), 100);
       try {
         const recent = localStorage.getItem('arc_recent_files');
+        // eslint-disable-next-line
         if (recent) setRecentFiles(JSON.parse(recent));
-      } catch (e) {}
+      } catch { }
     } else {
-      // eslint-disable-next-line
       setQuery('');
       setResults([]);
       setSelectedIndex(0);

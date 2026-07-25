@@ -49,7 +49,6 @@ export default function Dashboard() {
       if (savedSidebar !== null) {
         setTimeout(() => setIsLeftSidebarOpen(savedSidebar === 'true'), 0);
       } else {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         setIsLeftSidebarOpen(window.innerWidth >= 768);
       }
     } catch {
