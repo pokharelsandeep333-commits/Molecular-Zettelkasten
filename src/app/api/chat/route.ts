@@ -6,8 +6,10 @@ import path from 'path';
 
 const VAULT_PATH = process.env.VAULT_PATH || '';
 
-const client = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
+// Initialize Google Gen AI lazily or with a dummy key for Docker build time.
+// During `next build` in Docker, process.env.GEMINI_API_KEY is undefined, which crashes the GoogleGenAI constructor.
+const getClient = () => new GoogleGenAI({
+  apiKey: process.env.GEMINI_API_KEY || 'dummy_key_for_build',
 });
 
 import { performSemanticSearch } from '../search/route';
@@ -33,7 +35,7 @@ async function getRelevantContext(query: string) {
     // 1. Adaptive Query Expansion (HyDE) - only for short vague queries
     if (wordCount < 15) {
       try {
-        const hydeRes = await client.interactions.create({
+        const hydeRes = await getClient().interactions.create({
           model: 'gemini-3.5-flash-lite',
           input: `You are an AI generating a search query for a semantic vector database.
 The user's chat message is: "${query}"
@@ -142,7 +144,7 @@ ${contextString}`;
       ? `[Conversation History]\n${historyString}\n\n[New Message]\nUSER: ${input}`
       : input;
 
-    const interaction = await client.interactions.create({
+    const interaction = await getClient().interactions.create({
       model: aiModel,
       input: finalInput,
       system_instruction: systemInstruction,
