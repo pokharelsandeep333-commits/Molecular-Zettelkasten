@@ -94,7 +94,8 @@ export async function POST(req: Request) {
     try {
       await verifyAuth(req);
     } catch (error) {
-      return NextResponse.json({ error: error.message }, { status: 401 });
+      const message = error instanceof Error ? error.message : 'Unauthorized';
+      return NextResponse.json({ error: message }, { status: 401 });
     }
 
     const { input, history, model } = await req.json();

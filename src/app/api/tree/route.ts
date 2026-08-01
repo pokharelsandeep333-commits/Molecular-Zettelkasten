@@ -65,7 +65,8 @@ export async function GET(request: Request) {
   try {
     await verifyAuth(request);
   } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 401 });
+    const message = error instanceof Error ? error.message : 'Unauthorized';
+    return NextResponse.json({ error: message }, { status: 401 });
   }
 
   if (!VAULT_PATH) {
