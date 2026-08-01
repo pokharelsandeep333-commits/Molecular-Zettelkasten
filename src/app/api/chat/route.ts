@@ -93,7 +93,7 @@ export async function POST(req: Request) {
   try {
     try {
       await verifyAuth(req);
-    } catch (error: any) {
+    } catch (error) {
       return NextResponse.json({ error: error.message }, { status: 401 });
     }
 

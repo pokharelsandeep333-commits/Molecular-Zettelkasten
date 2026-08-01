@@ -34,6 +34,13 @@ export async function verifyAuth(req: Request) {
   
   try {
     const decodedToken = await adminAuth.verifyIdToken(token);
+    
+    // Critical Backend Security Gap Fixed: Only allow the owner's email
+    if (decodedToken.email !== 'pokharelsandeep333@gmail.com') {
+      console.warn(`Unauthorized login attempt by: ${decodedToken.email}`);
+      throw new Error('Email not whitelisted');
+    }
+
     return decodedToken;
   } catch (error) {
     console.error('Error verifying Firebase JWT:', error);

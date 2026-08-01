@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useRef, useEffect, useState } from 'react';
-import { Send, Loader2, ChevronDown, Plus, Aperture, Fingerprint, Network, ChevronRight, MoreVertical, Trash2, Cloud } from 'lucide-react';
+import { Send, Loader2, Plus, Aperture, Fingerprint, Network, ChevronRight, MoreVertical, Trash2, Cloud } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { useAuth } from '@/context/AuthContext';
 import { saveChatSessionsToCloud, subscribeToChatSessions } from '@/lib/firestoreChat';

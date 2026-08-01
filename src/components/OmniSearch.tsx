@@ -75,7 +75,7 @@ export const OmniSearch: React.FC<OmniSearchProps> = ({ onSelectNote }) => {
           const token = await user.getIdToken();
           headers = { 'Authorization': `Bearer ${token}` };
         }
-      } catch (e) {}
+      } catch {}
 
       try {
         const res = await fetch(`/api/search?q=${encodeURIComponent(q)}&limit=15`, { headers });

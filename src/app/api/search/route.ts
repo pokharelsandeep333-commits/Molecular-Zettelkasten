@@ -37,7 +37,7 @@ export async function performSemanticSearch(query: string, limit: number) {
 export async function GET(request: Request) {
   try {
     await verifyAuth(request);
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 401 });
   }
 

@@ -7,7 +7,7 @@ const SMART_ENV_PATH = process.env.SMART_ENV_PATH || '';
 export async function GET(request: Request) {
   try {
     await verifyAuth(request);
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 401 });
   }
 

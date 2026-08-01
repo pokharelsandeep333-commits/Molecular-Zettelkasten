@@ -64,7 +64,7 @@ async function buildTree(dir: string, baseDir: string): Promise<TreeNode[]> {
 export async function GET(request: Request) {
   try {
     await verifyAuth(request);
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 401 });
   }
 
