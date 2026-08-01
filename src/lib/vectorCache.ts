@@ -1,7 +1,7 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 
-const SMART_ENV_PATH = process.env.SMART_ENV_PATH || '';
+const getSmartEnvPath = () => process.env.SMART_ENV_PATH || '';
 export const MODEL_KEY = 'TaylorAI/bge-micro-v2';
 
 export interface EmbeddingEntry {
@@ -32,29 +32,34 @@ let lastCacheTime = 0;
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
 export async function loadAllVectors(): Promise<EmbeddingEntry[]> {
-  if (!SMART_ENV_PATH) return [];
+  const smartEnvPath = getSmartEnvPath();
+  if (!smartEnvPath) return [];
   
   const entries: EmbeddingEntry[] = [];
-  const files = await fs.readdir(SMART_ENV_PATH);
-  
-  for (const file of files) {
-    if (!file.endsWith('.ajson')) continue;
-    const content = await fs.readFile(path.join(SMART_ENV_PATH, file), 'utf-8');
-    const lines = content.split('\n').filter(l => l.trim());
+  try {
+    const files = await fs.readdir(smartEnvPath);
     
-    for (const line of lines) {
-      try {
-        const match = line.match(/^"([^"]+)":\s*(\{.+\})[\s,]*$/);
-        if (!match) continue;
-        const data = JSON.parse(match[2]) as EmbeddingEntry;
-        const vec = data.embeddings?.[MODEL_KEY]?.vec;
-        if (vec && vec.length > 0) {
-          entries.push({ ...data, key: match[1] });
+    for (const file of files) {
+      if (!file.endsWith('.ajson')) continue;
+      const content = await fs.readFile(path.join(smartEnvPath, file), 'utf-8');
+      const lines = content.split('\n').filter(l => l.trim());
+      
+      for (const line of lines) {
+        try {
+          const match = line.match(/^"([^"]+)":\s*(\{.+\})[\s,]*$/);
+          if (!match) continue;
+          const data = JSON.parse(match[2]) as EmbeddingEntry;
+          const vec = data.embeddings?.[MODEL_KEY]?.vec;
+          if (vec && vec.length > 0) {
+            entries.push({ ...data, key: match[1] });
+          }
+        } catch {
+          // Skip malformed lines
         }
-      } catch {
-        // Skip malformed lines
       }
     }
+  } catch (e) {
+    console.error('Failed to read smart env directory', e);
   }
   return entries;
 }

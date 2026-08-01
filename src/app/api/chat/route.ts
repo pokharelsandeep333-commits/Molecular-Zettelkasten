@@ -4,7 +4,7 @@ import { GoogleGenAI } from '@google/genai';
 import { promises as fs } from 'fs';
 import path from 'path';
 
-const VAULT_PATH = process.env.VAULT_PATH || '';
+const getVaultPath = () => process.env.VAULT_PATH || '';
 
 // Initialize Google Gen AI lazily or with a dummy key for Docker build time.
 // During `next build` in Docker, process.env.GEMINI_API_KEY is undefined, which crashes the GoogleGenAI constructor.
@@ -75,7 +75,8 @@ Keep it under 20 words. Do NOT answer the question. Just output the search terms
     const contexts = [];
     for (const slug of matchedSlugs.slice(0, 3)) {
       try {
-        const actualPath = path.join(VAULT_PATH, `${slug}.md`);
+        const vaultPath = getVaultPath();
+        const actualPath = path.join(vaultPath, `${slug}.md`);
         const content = await fs.readFile(actualPath, 'utf-8');
         const strippedContent = stripMarkdown(content).slice(0, 3000);
         contexts.push(`--- Note: ${slug} ---\n${strippedContent}`);

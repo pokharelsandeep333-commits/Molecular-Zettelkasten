@@ -4,7 +4,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
 
-const VAULT_PATH = process.env.VAULT_PATH || '';
+const getVaultPath = () => process.env.VAULT_PATH || '';
 
 export interface NoteMetadata {
   slug: string;
@@ -48,7 +48,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: message }, { status: 401 });
   }
 
-  if (!VAULT_PATH) {
+  const vaultPath = getVaultPath();
+  if (!vaultPath) {
     return NextResponse.json({ error: 'VAULT_PATH not configured' }, { status: 500 });
   }
 
@@ -58,13 +59,13 @@ export async function GET(request: Request) {
   const tag = searchParams.get('tag') || '';
 
   try {
-    const files = await getMarkdownFiles(VAULT_PATH);
+    const files = await getMarkdownFiles(vaultPath);
     const notes: NoteMetadata[] = [];
 
     for (const filePath of files) {
       const content = await fs.readFile(filePath, 'utf-8');
       const { data, content: body } = matter(content);
-      const slug = slugify(filePath, VAULT_PATH);
+      const slug = slugify(filePath, vaultPath);
       const title = data.title || path.basename(filePath, '.md');
       const tags: string[] = Array.isArray(data.tags) ? data.tags : (data.tags ? [data.tags] : []);
       const excerpt = body.replace(/#+\s/g, '').replace(/\[\[.*?\]\]/g, '').trim().slice(0, 200);

@@ -3,7 +3,7 @@ import { verifyAuth } from '@/lib/firebase-admin';
 import { promises as fs } from 'fs';
 import path from 'path';
 
-const VAULT_PATH = process.env.VAULT_PATH || '';
+const getVaultPath = () => process.env.VAULT_PATH || '';
 
 export interface TreeNode {
   name: string;
@@ -69,12 +69,13 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: message }, { status: 401 });
   }
 
-  if (!VAULT_PATH) {
+  const vaultPath = getVaultPath();
+  if (!vaultPath) {
     return NextResponse.json({ error: 'VAULT_PATH not configured' }, { status: 500 });
   }
 
   try {
-    const tree = await buildTree(VAULT_PATH, VAULT_PATH);
+    const tree = await buildTree(vaultPath, vaultPath);
     return NextResponse.json({ tree });
   } catch (err) {
     console.error("Error building tree:", err);

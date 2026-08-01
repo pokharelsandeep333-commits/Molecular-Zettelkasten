@@ -3,7 +3,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
 
-const VAULT_PATH = process.env.VAULT_PATH || '';
+const getVaultPath = () => process.env.VAULT_PATH || '';
 
 async function findFileRecursive(dir: string, targetName: string): Promise<string | null> {
   try {
@@ -30,18 +30,19 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ slug: string[] }> }
 ) {
-  if (!VAULT_PATH) {
+  const vaultPath = getVaultPath();
+  if (!vaultPath) {
     return NextResponse.json({ error: 'VAULT_PATH not configured' }, { status: 500 });
   }
 
   // Next.js 15: params is a Promise, must be awaited
   const { slug: slugSegments } = await params;
   const slug = slugSegments.map(decodeURIComponent).join('/');
-  const filePath = path.join(VAULT_PATH, `${slug}.md`);
+  const filePath = path.join(vaultPath, `${slug}.md`);
 
   // Prevent path traversal attacks
   const resolvedPath = path.resolve(filePath);
-  const resolvedVault = path.resolve(VAULT_PATH);
+  const resolvedVault = path.resolve(vaultPath);
   if (!resolvedPath.startsWith(resolvedVault)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
@@ -54,7 +55,7 @@ export async function GET(
   } catch {
     // Fallback: search recursively for the basename (case-insensitive)
     const targetName = path.basename(filePath);
-    const foundPath = await findFileRecursive(VAULT_PATH, targetName);
+    const foundPath = await findFileRecursive(vaultPath, targetName);
     if (foundPath) {
       actualFilePath = foundPath;
       content = await fs.readFile(actualFilePath, 'utf-8');
