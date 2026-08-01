@@ -103,7 +103,7 @@ The application is containerized and deployed automatically to **AWS EC2** using
     # Application Url
     NEXT_PUBLIC_API_URL=http://localhost:3000
 
-    # Firebase Config
+    # Firebase Config (Client-side)
     NEXT_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key
     NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
     NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
@@ -111,6 +111,10 @@ The application is containerized and deployed automatically to **AWS EC2** using
     NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
     NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
     NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=your_measurement_id
+
+    # Firebase Admin Config (Server-side for JWT Verification)
+    FIREBASE_CLIENT_EMAIL=your_service_account_email
+    FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
     ```
 
 4.  Launch the development server:
@@ -127,7 +131,8 @@ If you want to host your own Molecular Zettelkasten, you must handle a few key c
 ### Option A: Docker on a VPS (AWS EC2, DigitalOcean, etc.)
 This mimics the official setup and is the most robust way to host it, as it supports persistent access to your Obsidian vault files. When deploying, consider the following requirements:
 * **GitHub Actions Pipeline:** You must configure all required GitHub Secrets (Firebase API keys, DockerHub credentials) in your forked repository to enable the CI/CD pipeline.
-* **Environment Variables:** Update the `.env` variables in the `ec2-deployment` folder before running `docker-compose up -d` on your server.
+* **Environment Variables:** Update the `.env` variables in the `ec2-deployment` folder before running `docker-compose up -d` on your server. 
+  > **CRITICAL WARNING:** When formatting the `FIREBASE_PRIVATE_KEY` in your server's `.env` file, you must enclose the entire key in exactly one pair of double quotes and ensure there are no leading spaces or trailing extra quotes (e.g., `FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"`). Failure to format this strictly will cause the Firebase Admin SDK to crash, resulting in persistent `401 Unauthorized` API errors.
 * **Reverse Proxy & SSL:** You will need to configure an Nginx reverse proxy to route external web traffic to the Docker container (running on port 3000) and secure your domain using Certbot/Let's Encrypt for SSL.
 * **Automated Syncing:** Configure the provided `sync-vault.sh` script as a cron job on your server to automatically pull the latest changes from your remote Obsidian vault.
 
