@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { verifyAuth } from '@/lib/firebase-admin';
 import { promises as fs } from 'fs';
 import path from 'path';
 
@@ -60,7 +61,13 @@ async function buildTree(dir: string, baseDir: string): Promise<TreeNode[]> {
   return nodes;
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  try {
+    await verifyAuth(request);
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 401 });
+  }
+
   if (!VAULT_PATH) {
     return NextResponse.json({ error: 'VAULT_PATH not configured' }, { status: 500 });
   }

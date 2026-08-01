@@ -225,9 +225,17 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ onNodeClick, setIsChat
         content: m.content
       }));
 
+      let token = '';
+      if (user) {
+        token = await user.getIdToken();
+      }
+
       const res = await fetch('/api/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
         body: JSON.stringify({
           input: userMessage.content,
           model: 'gemini-3.6-flash',
@@ -289,16 +297,30 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ onNodeClick, setIsChat
     if (activeTab === 'context' && activeNoteSlug) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsLoadingSimilar(true);
-      fetch(`/api/similar?slug=${encodeURIComponent(activeNoteSlug)}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data.results) {
-            setSimilarNotes(data.results);
+
+      const fetchSimilar = async () => {
+        let token = '';
+        if (user) {
+          token = await user.getIdToken();
+        }
+
+        fetch(`/api/similar?slug=${encodeURIComponent(activeNoteSlug)}`, {
+          headers: {
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
           }
         })
-        .finally(() => setIsLoadingSimilar(false));
+          .then(res => res.json())
+          .then(data => {
+            if (data.results) {
+              setSimilarNotes(data.results);
+            }
+          })
+          .finally(() => setIsLoadingSimilar(false));
+      };
+
+      fetchSimilar();
     }
-  }, [activeTab, activeNoteSlug]);
+  }, [activeTab, activeNoteSlug, user]);
 
   return (
     <div className="h-full flex flex-col bg-[#001E3C]/40 backdrop-blur-md text-gray-200 shrink-0 w-full md:w-[400px] border-l border-[#00F0FF]/30 shadow-[-10px_0_30px_rgba(0,240,255,0.05)] relative z-10">

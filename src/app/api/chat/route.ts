@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { verifyAuth } from '@/lib/firebase-admin';
 import { GoogleGenAI } from '@google/genai';
 import { promises as fs } from 'fs';
 import path from 'path';
@@ -90,6 +91,12 @@ Keep it under 20 words. Do NOT answer the question. Just output the search terms
 
 export async function POST(req: Request) {
   try {
+    try {
+      await verifyAuth(req);
+    } catch (error: any) {
+      return NextResponse.json({ error: error.message }, { status: 401 });
+    }
+
     const { input, history, model } = await req.json();
     const aiModel = model || 'gemini-3.6-flash';
 

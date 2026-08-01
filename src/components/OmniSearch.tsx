@@ -2,12 +2,14 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Search, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { NoteMetadata } from '@/app/api/notes/route';
+import { useAuth } from '@/context/AuthContext';
 
 interface OmniSearchProps {
   onSelectNote: (slug: string) => void;
 }
 
 export const OmniSearch: React.FC<OmniSearchProps> = ({ onSelectNote }) => {
+  const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<NoteMetadata[]>([]);
@@ -66,8 +68,17 @@ export const OmniSearch: React.FC<OmniSearchProps> = ({ onSelectNote }) => {
         return;
       }
       setIsLoading(true);
+      
+      let headers = {};
       try {
-        const res = await fetch(`/api/search?q=${encodeURIComponent(q)}&limit=15`);
+        if (user) {
+          const token = await user.getIdToken();
+          headers = { 'Authorization': `Bearer ${token}` };
+        }
+      } catch (e) {}
+
+      try {
+        const res = await fetch(`/api/search?q=${encodeURIComponent(q)}&limit=15`, { headers });
         if (res.ok) {
           const data = await res.json();
           const matchedSlugs = new Set<string>(
@@ -78,13 +89,13 @@ export const OmniSearch: React.FC<OmniSearchProps> = ({ onSelectNote }) => {
               }).filter(Boolean)
           );
 
-          const noteData = await fetch('/api/notes?limit=500');
+          const noteData = await fetch('/api/notes?limit=500', { headers });
           const allNotes = await noteData.json();
           const filtered = (allNotes.notes as NoteMetadata[]).filter((n: NoteMetadata) => matchedSlugs.has(n.slug));
           setResults(filtered);
         }
       } catch {
-        const res = await fetch(`/api/notes?q=${encodeURIComponent(q)}&limit=15`);
+        const res = await fetch(`/api/notes?q=${encodeURIComponent(q)}&limit=15`, { headers });
         const data = await res.json();
         if (data.notes) setResults(data.notes);
       } finally {
@@ -92,7 +103,7 @@ export const OmniSearch: React.FC<OmniSearchProps> = ({ onSelectNote }) => {
         setSelectedIndex(0);
       }
     }, 300);
-  }, []);
+  }, [user]);
 
   const handleInputKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown') {

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { verifyAuth } from '@/lib/firebase-admin';
 import { getCachedVectors, cosineSimilarity, MODEL_KEY } from '@/lib/vectorCache';
 
 const SMART_ENV_PATH = process.env.SMART_ENV_PATH || '';
@@ -34,6 +35,12 @@ export async function performSemanticSearch(query: string, limit: number) {
 }
 
 export async function GET(request: Request) {
+  try {
+    await verifyAuth(request);
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 401 });
+  }
+
   const { searchParams } = new URL(request.url);
   const query = searchParams.get('q');
   const limit = parseInt(searchParams.get('limit') || '10', 10);

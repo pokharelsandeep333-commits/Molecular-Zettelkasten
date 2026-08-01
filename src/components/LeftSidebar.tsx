@@ -79,12 +79,24 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
   const { user, logout } = useAuth();
 
   useEffect(() => {
-    fetch('/api/tree')
-      .then(res => res.json())
-      .then(data => {
-        if (data.tree) setTreeData(data.tree);
-      });
-  }, []);
+    const fetchTree = async () => {
+      let token = '';
+      if (user) {
+        token = await user.getIdToken();
+      }
+      
+      fetch('/api/tree', {
+        headers: {
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        }
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.tree) setTreeData(data.tree);
+        });
+    };
+    fetchTree();
+  }, [user]);
 
   return (
     <>
