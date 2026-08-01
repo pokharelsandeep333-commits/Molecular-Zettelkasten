@@ -1,23 +1,24 @@
 import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 
-// Initialize Firebase Admin SDK
-if (!getApps().length) {
-  try {
-    initializeApp({
-      credential: cert({
-        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        // Handle newlines in the private key correctly
-        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-      }),
-    });
-  } catch (error) {
-    console.error('Firebase admin initialization error', error);
+// Lazy initialize Firebase Admin SDK
+function getAdminAuth() {
+  if (!getApps().length) {
+    try {
+      initializeApp({
+        credential: cert({
+          projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'dummy-project-id',
+          clientEmail: process.env.FIREBASE_CLIENT_EMAIL || 'dummy@example.com',
+          // Handle newlines in the private key correctly
+          privateKey: (process.env.FIREBASE_PRIVATE_KEY || '-----BEGIN PRIVATE KEY-----\n-----END PRIVATE KEY-----\n').replace(/\\n/g, '\n'),
+        }),
+      });
+    } catch (error) {
+      console.error('Firebase admin initialization error', error);
+    }
   }
+  return getAuth();
 }
-
-export const adminAuth = getAuth();
 
 /**
  * Helper function to verify the Authorization Bearer token from a Request.
@@ -33,6 +34,7 @@ export async function verifyAuth(req: Request) {
   const token = authHeader.split('Bearer ')[1];
   
   try {
+    const adminAuth = getAdminAuth();
     const decodedToken = await adminAuth.verifyIdToken(token);
     
     // Critical Backend Security Gap Fixed: Only allow the owner's email
