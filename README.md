@@ -43,18 +43,23 @@ By giving the AI direct access to your personal knowledge base, it can continuou
 ```text
 src/
 ├── app/                  # Next.js App Router pages and layouts
-│   ├── api/              # Backend API routes (Chat, Search, Tree, etc.)
+│   ├── api/              # Backend API routes
 │   │   ├── chat/         # Interactions API & HyDE implementation
+│   │   ├── notes/        # Obsidian Vault note retrieval
 │   │   ├── search/       # Semantic vector search engine
-│   │   └── notes/        # Obsidian Vault note retrieval
+│   │   ├── similar/      # Find similar notes endpoint
+│   │   └── tree/         # File tree generation for sidebar
 │   └── globals.css       # Tailwind entry and custom CSS variables
 ├── components/           # Reusable React components
 │   ├── ChatSidebar.tsx   # E.D.I.T.H. chat interface
+│   ├── LeftSidebar.tsx   # File explorer and navigation sidebar
 │   ├── MainContent.tsx   # Note viewer and primary workspace
 │   ├── MarkdownRenderer.tsx # Obsidian markdown to React parser
+│   ├── Mermaid.tsx       # Mermaid diagram renderer
 │   └── OmniSearch.tsx    # Global semantic search palette
 ├── context/              # React Context Providers (e.g., AuthContext)
 └── lib/                  # Utilities, Firebase configs, and logic
+    ├── firebase-admin.ts # Firebase Admin SDK for server-side auth
     ├── firebase.ts       # Firebase client initialization
     ├── firestoreChat.ts  # Firestore chat history sync logic
     └── vectorCache.ts    # Vector caching & cosine similarity math
