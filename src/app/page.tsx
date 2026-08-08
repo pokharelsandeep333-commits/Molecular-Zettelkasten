@@ -12,6 +12,8 @@ import { OmniSearch } from '@/components/OmniSearch';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Download, FileText } from 'lucide-react';
 
+const getNow = () => Date.now();
+
 export default function Dashboard() {
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -118,7 +120,7 @@ export default function Dashboard() {
     
     try {
       const encodedSlug = slug.split('/').map(encodeURIComponent).join('/');
-      const res = await fetch(`/api/notes/${encodedSlug}`);
+      const res = await fetch(`/api/notes/${encodedSlug}?t=${getNow()}`);
       const data = await res.json();
       
       const formatDate = (iso: string) => {
