@@ -35,9 +35,49 @@ export async function GET(
     return NextResponse.json({ error: 'VAULT_PATH not configured' }, { status: 500 });
   }
 
-  // Next.js 15: params is a Promise, must be awaited
   const { slug: slugSegments } = await params;
   const slug = slugSegments.map(decodeURIComponent).join('/');
+  
+  const rawExtensions = ['.pdf', '.docx', '.png', '.jpg', '.jpeg', '.gif', '.svg'];
+  const ext = path.extname(slug).toLowerCase();
+
+  if (rawExtensions.includes(ext)) {
+    const filePath = path.join(vaultPath, slug);
+    const resolvedPath = path.resolve(filePath);
+    const resolvedVault = path.resolve(vaultPath);
+    if (!resolvedPath.startsWith(resolvedVault)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+    
+    let actualFilePath = filePath;
+    try {
+      await fs.access(actualFilePath);
+    } catch {
+       const targetName = path.basename(filePath);
+       const foundPath = await findFileRecursive(vaultPath, targetName);
+       if (foundPath) {
+         actualFilePath = foundPath;
+       } else {
+         return NextResponse.json({ error: 'Note not found' }, { status: 404 });
+       }
+    }
+    
+    const actualRelativeSlug = path.relative(vaultPath, actualFilePath).replace(/\\/g, '/');
+
+    return NextResponse.json({
+      slug: actualRelativeSlug,
+      title: path.basename(actualFilePath),
+      tags: [],
+      created: '',
+      modified: '',
+      content: '',
+      frontmatter: {},
+      isRawFile: true,
+      fileUrl: `/api/raw/${actualRelativeSlug.split('/').map(encodeURIComponent).join('/')}`,
+      fileType: ext
+    });
+  }
+
   const filePath = path.join(vaultPath, `${slug}.md`);
 
   // Prevent path traversal attacks

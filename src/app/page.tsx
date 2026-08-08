@@ -10,6 +10,7 @@ import { ChatSidebar } from '@/components/ChatSidebar';
 import { MarkdownRenderer } from '@/components/MarkdownRenderer';
 import { OmniSearch } from '@/components/OmniSearch';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Download, FileText } from 'lucide-react';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -127,10 +128,53 @@ export default function Dashboard() {
         } catch { return iso; }
       };
       
+      let noteContent = <MarkdownRenderer content={data.content} />;
+
+      if (data.isRawFile) {
+        if (data.fileType === '.pdf') {
+          noteContent = (
+            <div className="w-full h-[80vh] bg-surface-container-high rounded-xl overflow-hidden border border-electric-cyan/30 shadow-[0_0_15px_rgba(0,240,255,0.1)]">
+              <iframe src={data.fileUrl} className="w-full h-full" title={data.title} />
+            </div>
+          );
+        } else if (data.fileType === '.docx') {
+          noteContent = (
+            <div className="w-full max-w-xl mx-auto mt-10 p-8 bg-surface-container-high rounded-xl border border-electric-cyan/30 flex flex-col items-center justify-center gap-6 shadow-[0_0_15px_rgba(0,240,255,0.1)]">
+              <FileText size={48} className="text-electric-cyan" />
+              <div className="text-center">
+                <h3 className="text-lg font-tech text-white mb-2">{data.title}</h3>
+                <p className="text-sm text-muted-steel mb-6">Word documents cannot be previewed directly in the Matrix. Please download the file to view its contents.</p>
+              </div>
+              <a 
+                href={data.fileUrl} 
+                download={data.title}
+                className="px-6 py-2.5 bg-electric-cyan/10 hover:bg-electric-cyan/20 text-electric-cyan border border-electric-cyan/50 rounded-full font-tech tracking-wider transition-colors shadow-[0_0_10px_rgba(0,240,255,0.15)] flex items-center gap-2"
+              >
+                <Download size={16} />
+                DOWNLOAD FILE
+              </a>
+            </div>
+          );
+        } else if (['.png', '.jpg', '.jpeg', '.gif', '.svg'].includes(data.fileType)) {
+          noteContent = (
+            <div className="w-full flex justify-center items-center p-4 bg-surface-container/50 rounded-xl border border-whisper-border">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={data.fileUrl} alt={data.title} className="max-w-full max-h-[80vh] rounded shadow-lg" />
+            </div>
+          );
+        } else {
+           noteContent = (
+             <div className="p-8 text-center text-muted-steel">
+               <a href={data.fileUrl} download className="text-electric-cyan hover:underline font-tech tracking-wider">DOWNLOAD {data.title}</a>
+             </div>
+           );
+        }
+      }
+      
       setActiveNoteDetail({
         id: slug.split('/').pop()?.toUpperCase().replace(/-/g, '') || slug,
         title: data.title,
-        content: <MarkdownRenderer content={data.content} />,
+        content: noteContent,
         createdDate: formatDate(data.created),
         modifiedDate: formatDate(data.modified),
         tags: data.tags,
