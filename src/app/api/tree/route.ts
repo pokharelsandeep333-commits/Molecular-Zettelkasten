@@ -47,11 +47,12 @@ async function buildTree(dir: string, baseDir: string): Promise<TreeNode[]> {
             children
           });
         }
-      } else if (entry.name.endsWith('.md')) {
+      } else {
+        const isMd = entry.name.endsWith('.md');
         nodes.push({
-          name: entry.name.replace(/\.md$/, ''),
+          name: isMd ? entry.name.replace(/\.md$/, '') : entry.name,
           type: 'file',
-          path: relativePath.replace(/\.md$/, ''),
+          path: isMd ? relativePath.replace(/\.md$/, '') : relativePath,
         });
       }
     }
