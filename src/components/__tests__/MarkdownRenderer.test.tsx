@@ -14,10 +14,16 @@ describe('MarkdownRenderer', () => {
     expect(heading).toHaveTextContent('Main Heading')
   })
 
-  it('strips Obsidian wikilinks correctly', () => {
-    // [[Note|Alias]] should become Alias
-    // [[Note]] should become Note
+  it('renders Obsidian wikilinks correctly', () => {
+    // [[Note|Alias]] should become a button with text Alias
+    // [[Note]] should become a button with text Note
     render(<MarkdownRenderer content="Check out [[Knowledge Base|this link]] and [[React]]" />)
-    expect(screen.getByText(/Check out this link and React/)).toBeInTheDocument()
+    
+    expect(screen.getByText(/Check out/)).toBeInTheDocument()
+    expect(screen.getByText(/and/)).toBeInTheDocument()
+    
+    const buttons = screen.getAllByRole('button')
+    expect(buttons[0]).toHaveTextContent('this link')
+    expect(buttons[1]).toHaveTextContent('React')
   })
 })

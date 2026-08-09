@@ -11,14 +11,27 @@ import { ObsidianCallout } from './ObsidianCallout';
 
 interface MarkdownRendererProps {
   content: string;
+  onNodeClick?: (slug: string) => void;
 }
 
-export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content = '' }) => {
-  // Strip Obsidian wikilinks [[Note]] → Note, and ![[embed]] → (embedded)
-  const cleaned = content
-    .replace(/!\[\[([^\]]+)\]\]/g, '') // remove embedded note syntax
-    .replace(/\[\[([^\]|]+)\|([^\]]+)\]\]/g, '$2') // [[Note|Alias]] → Alias
-    .replace(/\[\[([^\]]+)\]\]/g, '$1'); // [[Note]] → Note
+export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content = '', onNodeClick }) => {
+  let cleaned = content;
+
+  // 1. Convert image embeds: ![[Image.png]] -> ![Image.png](/api/raw/Image.png)
+  cleaned = cleaned.replace(/!\[\[([^\]]+\.(?:png|jpe?g|gif|svg|webp|bmp|pdf))\]\]/gi, '![$1](/api/raw/$1)');
+
+  // 2. Convert remaining note embeds: ![[Note]] -> [[Note]] (so they become links instead of failing to embed)
+  cleaned = cleaned.replace(/!\[\[([^\]]+)\]\]/g, '[[$1]]');
+
+  // 3. Convert wikilinks with alias: [[Note|Alias]] -> [Alias](#Note)
+  cleaned = cleaned.replace(/\[\[([^\]|]+)\|([^\]]+)\]\]/g, (match, note, alias) => {
+    return `[${alias}](#${encodeURIComponent(note)})`;
+  });
+
+  // 4. Convert simple wikilinks: [[Note]] -> [Note](#Note)
+  cleaned = cleaned.replace(/\[\[([^\]]+)\]\]/g, (match, note) => {
+    return `[${note}](#${encodeURIComponent(note)})`;
+  });
 
   return (
     <ReactMarkdown
@@ -60,16 +73,32 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content = ''
           <ol className="list-decimal pl-6 space-y-2 mb-4 text-base text-on-surface marker:text-on-surface-variant">{children}</ol>
         ),
         li: ({ children }) => <li className="leading-relaxed">{children}</li>,
-        a: ({ href, children }) => (
-          <a
-            href={href}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-electric-cyan hover:underline"
-          >
-            {children}
-          </a>
-        ),
+        a: ({ href, children }) => {
+          if (href?.startsWith('#')) {
+            const slug = decodeURIComponent(href.replace('#', ''));
+            return (
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (onNodeClick) onNodeClick(slug);
+                }}
+                className="text-electric-cyan hover:bg-electric-cyan/10 px-1 py-0.5 rounded transition-colors inline-flex items-center font-medium border border-electric-cyan/20 cursor-pointer"
+              >
+                {children}
+              </button>
+            );
+          }
+          return (
+            <a
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-electric-cyan hover:underline"
+            >
+              {children}
+            </a>
+          );
+        },
         code: ({ className, children, ...props }) => {
           const isBlock = className?.includes('language-');
           const language = isBlock && className ? className.replace('language-', '') : '';

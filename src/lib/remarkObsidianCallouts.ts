@@ -19,25 +19,13 @@ import type { Plugin } from 'unified';
 type MdastNode = any;
 
 /**
- * Regex to match the first line of an Obsidian callout.
+ * Regex to match the callout declaration at the start of a text node.
  * Groups:
  *   1 — callout type  (e.g. NOTE, WARNING)
  *   2 — fold marker   (+  or  -  or empty)
- *   3 — custom title  (rest of the line, may be empty)
+ *   3 — custom title  (rest of the line, up to the first newline)
  */
-const CALLOUT_RE = /^\[!(\w+)\]([+-])?\s*(.*)?$/i;
-
-/**
- * Recursively extract the plain-text value from an MDAST node tree.
- * Works for paragraph → text / inlineCode / emphasis / strong, etc.
- */
-function extractText(node: MdastNode): string {
-  if (node.value) return node.value;
-  if (node.children) {
-    return node.children.map(extractText).join('');
-  }
-  return '';
-}
+const CALLOUT_RE = /^\[!(\w+)\]([+-])?(?:[ \t]+([^\n]*))?/i;
 
 const remarkObsidianCallouts: Plugin = () => {
   return (tree) => {
@@ -50,9 +38,13 @@ const remarkObsidianCallouts: Plugin = () => {
         return;
       }
 
-      // Extract the raw text of the first paragraph to test for callout syntax
-      const firstText = extractText(firstChild);
-      const match = firstText.match(CALLOUT_RE);
+      // The callout syntax must be at the very beginning of the first text node
+      const firstTextNode = firstChild.children[0];
+      if (firstTextNode.type !== 'text' || !firstTextNode.value) {
+        return;
+      }
+
+      const match = firstTextNode.value.match(CALLOUT_RE);
       if (!match) return;
 
       const calloutType = match[1].toUpperCase();
@@ -62,8 +54,17 @@ const remarkObsidianCallouts: Plugin = () => {
       const isFoldable = foldMarker === '+' || foldMarker === '-';
       const defaultCollapsed = foldMarker === '-';
 
-      // Build the body: everything after the first paragraph
-      const bodyChildren = node.children.slice(1);
+      // Remove the callout declaration from the text node so it doesn't render in the body
+      firstTextNode.value = firstTextNode.value.substring(match[0].length);
+      
+      // If there's a leading newline (e.g., from `> [!NOTE]\n> body`), strip it so we don't get an empty line
+      if (firstTextNode.value.startsWith('\n')) {
+        firstTextNode.value = firstTextNode.value.substring(1);
+      }
+
+      // If the text node is now empty, we could remove it, but ReactMarkdown handles empty text nodes fine.
+      // We keep the entire `node.children` intact (including the modified first paragraph) as the body.
+      const bodyChildren = node.children;
 
       // Replace the blockquote node with an aside node (valid HTML element)
       const calloutNode: MdastNode = {

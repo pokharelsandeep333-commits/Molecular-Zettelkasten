@@ -130,7 +130,7 @@ export default function Dashboard() {
         } catch { return iso; }
       };
       
-      let noteContent = <MarkdownRenderer content={data.content} />;
+      let noteContent = <MarkdownRenderer content={data.content} onNodeClick={handleNodeClick} />;
 
       if (data.isRawFile) {
         if (data.fileType === '.pdf') {
