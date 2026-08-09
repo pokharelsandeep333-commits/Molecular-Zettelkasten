@@ -6,6 +6,8 @@ import rehypeKatex from 'rehype-katex';
 import { Prism } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { Mermaid } from './Mermaid';
+import remarkObsidianCallouts from '@/lib/remarkObsidianCallouts';
+import { ObsidianCallout } from './ObsidianCallout';
 
 interface MarkdownRendererProps {
   content: string;
@@ -20,9 +22,23 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content = ''
 
   return (
     <ReactMarkdown
-      remarkPlugins={[remarkGfm, remarkMath]}
+      remarkPlugins={[remarkGfm, remarkMath, remarkObsidianCallouts]}
       rehypePlugins={[rehypeKatex]}
       components={{
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        aside: ({ node, children }: any) => {
+          const props = node?.properties || {};
+          return (
+            <ObsidianCallout
+              calloutType={props['dataCalloutType']}
+              title={props['dataCalloutTitle']}
+              isFoldable={props['dataCalloutFoldable']}
+              defaultCollapsed={props['dataCalloutCollapsed']}
+            >
+              {children}
+            </ObsidianCallout>
+          );
+        },
         h1: ({ children }) => (
           <h1 className="text-2xl font-bold text-on-surface mt-6 mb-4 first:mt-0 pb-2 border-b border-whisper-border">
             {children}

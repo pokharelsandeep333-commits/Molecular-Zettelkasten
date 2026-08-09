@@ -64,3 +64,16 @@ body {
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
+
+/* ── Obsidian Callout Animations ────────────────────────────────── */
+.callout-content {
+  max-height: 1000px;
+  overflow: hidden;
+  transition: max-height 0.3s ease-in-out, opacity 0.25s ease-in-out;
+  opacity: 1;
+}
+
+.callout-collapsed {
+  max-height: 0;
+  opacity: 0;
+}
