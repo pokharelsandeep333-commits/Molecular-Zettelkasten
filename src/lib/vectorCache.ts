@@ -42,20 +42,20 @@ export async function loadAllVectors(): Promise<EmbeddingEntry[]> {
     for (const file of files) {
       if (!file.endsWith('.ajson')) continue;
       const content = await fs.readFile(path.join(smartEnvPath, file), 'utf-8');
-      const lines = content.split('\n').filter(l => l.trim());
-      
-      for (const line of lines) {
-        try {
-          const match = line.match(/^"([^"]+)":\s*(\{.+\})[\s,]*$/);
-          if (!match) continue;
-          const data = JSON.parse(match[2]) as EmbeddingEntry;
-          const vec = data.embeddings?.[MODEL_KEY]?.vec;
+      try {
+        let jsonString = content.trim();
+        if (jsonString.endsWith(',')) jsonString = jsonString.slice(0, -1);
+        const dataMap = JSON.parse('{' + jsonString + '}');
+        for (const [key, data] of Object.entries(dataMap)) {
+          const entry = data as EmbeddingEntry;
+          const vec = entry.embeddings?.[MODEL_KEY]?.vec;
           if (vec && vec.length > 0) {
-            entries.push({ ...data, key: match[1] });
+            entries.push({ ...entry, key });
           }
-        } catch {
-          // Skip malformed lines
         }
+      } catch (e) {
+        // Skip malformed files
+        console.warn(`Failed to parse ajson file ${file}`);
       }
     }
   } catch (e) {
