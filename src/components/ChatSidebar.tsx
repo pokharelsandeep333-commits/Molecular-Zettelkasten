@@ -1,8 +1,12 @@
-'use client';
-
 import React, { useRef, useEffect, useState } from 'react';
-import { Send, Loader2, Plus, Aperture, Fingerprint, Network, ChevronRight, MoreVertical, Trash2, Cloud } from 'lucide-react';
+import { Send, Loader2, Plus, Aperture, Network, ChevronRight, MoreVertical, Trash2, Cloud } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import { Prism } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { Mermaid } from './Mermaid';
 import { useAuth } from '@/context/AuthContext';
 import { saveChatSessionsToCloud, subscribeToChatSessions } from '@/lib/firestoreChat';
 
@@ -103,6 +107,17 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ onNodeClick, setIsChat
 
     return () => unsubscribe();
   }, [user, isLoaded]);
+
+  // Global escape key to close sidebar
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsChatVisible(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [setIsChatVisible]);
 
   const persistSessions = (nextSessions: ChatSession[]) => {
     localStorage.setItem(SESSIONS_STORAGE_KEY, JSON.stringify(nextSessions));
@@ -423,24 +438,6 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ onNodeClick, setIsChat
                   <br />
                   <span className="text-[11px] font-mono tracking-widest text-[#00F0FF]/50 mt-1 block">AWAITING YOUR DIRECTIVE.</span>
                 </h1>
-                
-                {/* E.D.I.T.H. Crisp Glowing Logo */}
-                <div className="flex-1 flex items-center justify-center pointer-events-none pb-10 mt-8">
-                  <div className="relative flex items-center justify-center opacity-60">
-                    {/* Outer Ring */}
-                    <div className="absolute w-[240px] h-[240px] border border-[#00F0FF]/80 rounded-full animate-[spin_40s_linear_infinite] shadow-[0_0_15px_rgba(0,240,255,0.2)_inset,0_0_15px_rgba(0,240,255,0.2)]" />
-                    {/* Middle Dashed Ring */}
-                    <div className="absolute w-[220px] h-[220px] border-2 border-[#00F0FF]/60 border-dashed rounded-full animate-[spin_30s_linear_infinite_reverse]" />
-                    {/* Inner Thick Ring */}
-                    <div className="absolute w-[160px] h-[160px] border-2 border-[#00F0FF]/90 rounded-full shadow-[0_0_20px_rgba(0,240,255,0.4)]" />
-                    {/* Core Background Glow */}
-                    <div className="absolute w-[120px] h-[120px] bg-[#00F0FF]/10 rounded-full blur-xl animate-pulse" />
-                    
-                    {/* Crisp Icons */}
-                    <Aperture size={90} className="text-[#00F0FF] animate-[pulse_4s_ease-in-out_infinite] drop-shadow-[0_0_8px_rgba(0,240,255,0.8)]" strokeWidth={1.5} />
-                    <Fingerprint size={45} className="text-[#00F0FF] absolute drop-shadow-[0_0_8px_rgba(0,240,255,1)]" strokeWidth={1.5} />
-                  </div>
-                </div>
               </div>
             )}
 
@@ -460,7 +457,54 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ onNodeClick, setIsChat
                       </div>
                       <div className="flex-1 text-white/90 text-[15px] leading-relaxed prose prose-invert max-w-full prose-p:leading-relaxed prose-pre:bg-[#02050C] prose-pre:border prose-pre:border-[#00F0FF]/30 prose-pre:rounded-md">
                         <ReactMarkdown
+                          remarkPlugins={[remarkGfm, remarkMath]}
+                          rehypePlugins={[rehypeKatex]}
                           components={{
+                            code: ({ className, children, ...props }) => {
+                              const isBlock = className?.includes('language-');
+                              const language = isBlock && className ? className.replace('language-', '') : '';
+                              const codeString = String(children).replace(/\n$/, '');
+                              
+                              if (!isBlock) {
+                                return (
+                                  <code className="bg-[#00F0FF]/10 border border-[#00F0FF]/30 rounded px-1.5 py-0.5 text-[#00F0FF] font-mono text-xs" {...props}>
+                                    {children}
+                                  </code>
+                                );
+                              }
+                    
+                              if (language === 'mermaid') {
+                                return <Mermaid chart={codeString} />;
+                              }
+                    
+                              return (
+                                <div className="relative group mb-4 mt-2">
+                                  <div className="absolute right-2 top-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button
+                                      onClick={() => navigator.clipboard.writeText(codeString)}
+                                      className="bg-[#02050C] hover:bg-[#00F0FF] text-[#00F0FF] hover:text-[#02050C] border border-[#00F0FF]/50 rounded px-2 py-1 text-[10px] font-tech transition-colors shadow-sm"
+                                      title="Copy Code"
+                                    >
+                                      COPY
+                                    </button>
+                                  </div>
+                                  <Prism
+                                    language={language}
+                                    style={vscDarkPlus}
+                                    customStyle={{
+                                      margin: 0,
+                                      borderRadius: '0.5rem',
+                                      border: '1px solid rgba(0, 240, 255, 0.3)',
+                                      backgroundColor: '#02050C',
+                                      fontSize: '0.75rem',
+                                      fontFamily: 'var(--font-mono)'
+                                    }}
+                                  >
+                                    {codeString}
+                                  </Prism>
+                                </div>
+                              );
+                            },
                             a: ({ href, children }) => {
                               if (href?.startsWith('#')) {
                                 const slug = decodeURIComponent(href.replace('#', ''));

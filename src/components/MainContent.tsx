@@ -42,6 +42,15 @@ export const MainContent: React.FC<MainContentProps> = ({
     scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  React.useEffect(() => {
+    if (activeNoteDetail?.id) {
+      // Small timeout ensures layout has updated before scrolling
+      setTimeout(() => {
+        scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+      }, 50);
+    }
+  }, [activeNoteDetail?.id]);
+
   return (
     <div className="flex-1 min-w-0 h-full flex flex-col bg-transparent relative transition-all duration-300 ease-in-out z-10">
       {children}

@@ -232,7 +232,7 @@ export default function Dashboard() {
             animate={isMobile ? { x: 0, opacity: 1 } : { width: 400, opacity: 1 }}
             exit={isMobile ? { x: "100%", opacity: 0 } : { width: 0, opacity: 0 }}
             transition={{ type: "spring", stiffness: 400, damping: 40 }}
-            className={`h-full shrink-0 z-50 overflow-hidden ${isMobile ? 'fixed inset-y-0 right-0 w-full' : 'relative z-20'}`}
+            className={`h-full shrink-0 z-50 overflow-hidden ${isMobile ? 'fixed inset-y-0 right-0 w-full' : 'relative z-20 shadow-[-10px_0_30px_rgba(0,0,0,0.5)] border-l border-[#00F0FF]/30 bg-[#02050C]/90'}`}
           >
             <ChatSidebar 
               onNodeClick={handleNodeClick} 
