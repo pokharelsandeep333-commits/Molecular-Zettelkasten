@@ -33,6 +33,14 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content = ''
     return `[${note}](#${encodeURIComponent(note)})`;
   });
 
+  // 5. Move $$ fences onto their own lines so remark-math sees display math.
+  // Obsidian accepts $$x$$ written inline, but remark-math only treats $$ as
+  // display math when the fences stand alone; otherwise it parses as text math
+  // and KaTeX renders with displayMode:false, where \tag is a hard error.
+  // Requiring the opening $$ at line start leaves callout/blockquote rows alone.
+  cleaned = cleaned.replace(/^[ \t]*\$\$(?![ \t]*$)([\s\S]+?)\$\$[ \t]*$/gm,
+    (match, body) => `$$\n${body.trim()}\n$$`);
+
   return (
     <ReactMarkdown
       remarkPlugins={[remarkGfm, remarkMath, remarkObsidianCallouts]}
