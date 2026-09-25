@@ -12,3 +12,16 @@ README.md
 .vercel
 *.pem
 .DS_Store
+
+# Local-only agent and Firebase files (AGENTS.md holds server access details)
+.agents
+.claude
+AGENTS.md
+CLAUDE.md
+CLAUDE.local.md
+skills-lock.json
+firebase.json
+.firebaserc
+.firebase
+firestore.rules
+*-debug.log*

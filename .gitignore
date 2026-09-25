@@ -41,5 +41,23 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# AI Agents
-.agents/
+# AI agent instructions, settings, plugins and skills (local only, never pushed)
+/.agents/
+/.claude/
+/CLAUDE.md
+/CLAUDE.local.md
+/AGENTS.md
+/skills-lock.json
+
+# Firebase config, rules and CLI state (local only, never pushed)
+/firebase.json
+/.firebaserc
+/.firebase/
+/firestore.rules
+/firestore.indexes.json
+/storage.rules
+/database.rules.json
+firebase-debug.log*
+firestore-debug.log*
+database-debug.log*
+ui-debug.log*
