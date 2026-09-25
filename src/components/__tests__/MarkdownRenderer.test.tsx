@@ -57,8 +57,12 @@ describe('MarkdownRenderer', () => {
     )
     const link = screen.getByRole('link', { name: /What Docker REALLY Is/ })
     expect(link).toHaveAttribute('href', '#2-what-docker-really-is--under-the-hood')
-    expect(container.querySelector('[id="2-what-docker-really-is--under-the-hood"]')?.tagName).toBe('H2')
+    const heading = container.querySelector<HTMLElement>('[id="2-what-docker-really-is--under-the-hood"]')!
+    expect(heading.tagName).toBe('H2')
+    const scrolled: Element[] = []
+    heading.scrollIntoView = function (this: Element) { scrolled.push(this) }
     link.click()
+    expect(scrolled).toEqual([heading]) // scrolls to the matching heading
     expect(clicks).toEqual([]) // not treated as a note
   })
 
