@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { verifyAuth } from '@/lib/firebase-admin';
+import { guard } from '@/lib/firebase-admin';
+import { RAW_MIME_TYPES } from '@/lib/vault';
 import { promises as fs } from 'fs';
 import path from 'path';
 
@@ -15,7 +16,7 @@ export interface TreeNode {
 async function buildTree(dir: string, baseDir: string): Promise<TreeNode[]> {
   const nodes: TreeNode[] = [];
   try {
-    const entries = await fs.readdir(dir, { withFileTypes: true });
+    const entries = await fs.readdir(/*turbopackIgnore: true*/ dir, { withFileTypes: true });
     
     // Sort directories first, then files
     const sortedEntries = entries.sort((a, b) => {
@@ -49,6 +50,8 @@ async function buildTree(dir: string, baseDir: string): Promise<TreeNode[]> {
         }
       } else {
         const isMd = entry.name.endsWith('.md');
+        // Only list files the viewer can open (notes and supported media).
+        if (!isMd && !RAW_MIME_TYPES[path.extname(entry.name).toLowerCase()]) continue;
         nodes.push({
           name: isMd ? entry.name.replace(/\.md$/, '') : entry.name,
           type: 'file',
@@ -63,16 +66,12 @@ async function buildTree(dir: string, baseDir: string): Promise<TreeNode[]> {
 }
 
 export async function GET(request: Request) {
-  try {
-    await verifyAuth(request);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unauthorized';
-    return NextResponse.json({ error: message }, { status: 401 });
-  }
+  const { response } = await guard(request);
+  if (response) return response;
 
   const vaultPath = getVaultPath();
   if (!vaultPath) {
-    return NextResponse.json({ error: 'VAULT_PATH not configured' }, { status: 500 });
+    return NextResponse.json({ error: 'Vault is not configured' }, { status: 500 });
   }
 
   try {

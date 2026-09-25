@@ -1,17 +1,27 @@
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
 :root {
-  --background: #000000;
+  --background: #02050C;
   --foreground: #ffffff;
+
+  /* Obsidian theme variables that LLM-Wiki SVG figures reference
+     (e.g. fill="var(--background-primary)" for graph nodes). */
+  --background-primary: #02050C;
+  --background-secondary: #041424;
+  --background-modifier-border: rgba(0, 240, 255, 0.2);
+  --text-normal: #E0F7FA;
+  --text-muted: rgba(180, 220, 255, 0.7);
+  --text-accent: #00F0FF;
+  --interactive-accent: #00F0FF;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: 'Outfit', var(--font-geist-sans), sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
-  --font-tech: 'Outfit', sans-serif;
+  /* Fonts are self-hosted by next/font in layout.tsx */
+  --font-sans: var(--font-outfit), system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+  --font-tech: var(--font-outfit), system-ui, sans-serif;
 
   /* E.D.I.T.H. Stark Tech Colors */
   --color-abyssal-bg: rgba(4, 9, 20, 0.6);
@@ -57,23 +67,86 @@ body {
   }
 }
 
+/* Scrollbars: hidden on touch screens, thin and visible where there is a mouse
+   so desktop users can still see and drag them. */
+.custom-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
 .custom-scrollbar::-webkit-scrollbar {
   display: none;
 }
-.custom-scrollbar {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+@media (pointer: fine) {
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 240, 255, 0.25) transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar {
+    display: block;
+    width: 8px;
+    height: 8px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(0, 240, 255, 0.2);
+    border-radius: 9999px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 240, 255, 0.4);
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+/* Controls revealed on hover must stay visible on touch screens, which have no hover. */
+@media (hover: none) {
+  .touch-visible {
+    opacity: 1 !important;
+  }
 }
 
 /* ── Obsidian Callout Animations ────────────────────────────────── */
+/* Animating grid rows (0fr <-> 1fr) collapses to the content's real height, so
+   long callouts are never clipped the way a fixed max-height would clip them. */
 .callout-content {
-  max-height: 1000px;
-  overflow: hidden;
-  transition: max-height 0.3s ease-in-out, opacity 0.25s ease-in-out;
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 0.3s ease-in-out, opacity 0.25s ease-in-out;
   opacity: 1;
 }
 
+.callout-content > * {
+  min-height: 0;
+  overflow: hidden;
+}
+
 .callout-collapsed {
-  max-height: 0;
+  grid-template-rows: 0fr;
   opacity: 0;
+}
+
+/* Inline SVG figures from notes: scale down on narrow screens, keep aspect ratio. */
+.vault-svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 1.25rem auto;
+  color: var(--text-normal);
+  overflow: visible;
+}
+
+/* Wide KaTeX display equations scroll instead of overflowing on phones. */
+.katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.25rem 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

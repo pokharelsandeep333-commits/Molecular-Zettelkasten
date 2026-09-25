@@ -1,11 +1,33 @@
 "use client";
 
 import React, { useState } from 'react';
-import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, GoogleAuthProvider } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
+import { useAuth } from '@/context/AuthContext';
 import { Network } from 'lucide-react';
 
 const googleProvider = new GoogleAuthProvider();
+
+// Firebase error codes -> messages that do not leak whether an account exists.
+function describeAuthError(err: unknown, fallback: string): string {
+  const code = (err as { code?: string })?.code || '';
+  switch (code) {
+    case 'auth/invalid-credential':
+    case 'auth/wrong-password':
+    case 'auth/user-not-found':
+    case 'auth/invalid-email':
+      return 'Invalid email or password.';
+    case 'auth/too-many-requests':
+      return 'Too many attempts. Please wait a few minutes and try again.';
+    case 'auth/network-request-failed':
+      return 'Network error. Check your connection and try again.';
+    case 'auth/popup-closed-by-user':
+    case 'auth/cancelled-popup-request':
+      return 'Sign-in was cancelled.';
+    default:
+      return fallback;
+  }
+}
 
 // Google "G" SVG icon
 const GoogleIcon = () => (
@@ -18,6 +40,7 @@ const GoogleIcon = () => (
 );
 
 export default function Login() {
+  const { authError } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -31,8 +54,7 @@ export default function Login() {
     try {
       await signInWithEmailAndPassword(auth, email, password);
     } catch (err: unknown) {
-      const error = err as Error;
-      setError(error.message || 'Failed to login');
+      setError(describeAuthError(err, 'Failed to sign in.'));
       setIsLoading(false);
     }
   };
@@ -43,15 +65,19 @@ export default function Login() {
     try {
       await signInWithPopup(auth, googleProvider);
     } catch (err: unknown) {
-      const error = err as Error;
-      setError(error.message || 'Google sign-in failed');
+      // Mobile browsers often block popups; a full-page redirect still works there.
+      if ((err as { code?: string })?.code === 'auth/popup-blocked') {
+        await signInWithRedirect(auth, googleProvider);
+        return;
+      }
+      setError(describeAuthError(err, 'Google sign-in failed.'));
       setIsGoogleLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-abyssal-bg flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-glass-surface backdrop-blur-md border border-whisper-border rounded-xl shadow-2xl p-8 flex flex-col items-center">
+    <main className="min-h-dvh bg-[#02050C] flex items-center justify-center p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]">
+      <div className="w-full max-w-md bg-glass-surface backdrop-blur-md border border-whisper-border rounded-xl shadow-2xl p-6 sm:p-8 flex flex-col items-center">
         <div className="w-12 h-12 rounded-lg bg-electric-cyan/20 border border-electric-cyan flex items-center justify-center mb-6">
           <Network className="text-electric-cyan w-6 h-6" />
         </div>
@@ -61,14 +87,15 @@ export default function Login() {
           Secure access to the Molecular Zettelkasten knowledge graph.
         </p>
 
-        {error && (
-          <div className="w-full bg-red-950/40 border border-red-500/50 text-red-300 text-sm p-3 rounded-lg mb-6">
-            {error}
+        {(error || authError) && (
+          <div role="alert" className="w-full bg-red-950/40 border border-red-500/50 text-red-300 text-sm p-3 rounded-lg mb-6">
+            {error || authError}
           </div>
         )}
 
         {/* Google Sign In */}
         <button
+          type="button"
           onClick={handleGoogleLogin}
           disabled={isGoogleLoading || isLoading}
           className="w-full flex items-center justify-center gap-3 bg-surface-container hover:bg-surface-container-high border border-whisper-border hover:border-electric-cyan/40 text-pure-ink font-medium py-3 rounded-lg transition-all active:-translate-y-px disabled:opacity-50 mb-6"
@@ -87,24 +114,29 @@ export default function Login() {
         {/* Email + Password */}
         <form onSubmit={handleLogin} className="w-full flex flex-col gap-5">
           <div className="flex flex-col gap-2">
-            <label className="font-mono text-xs text-muted-steel uppercase tracking-widest">Email</label>
+            <label htmlFor="email" className="font-mono text-xs text-muted-steel uppercase tracking-widest">Email</label>
             <input
+              id="email"
               type="email"
+              autoComplete="email"
+              inputMode="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-surface-container border border-outline focus:border-electric-cyan rounded-lg py-2.5 px-4 text-pure-ink placeholder-muted-steel focus:outline-none focus:ring-1 focus:ring-electric-cyan transition-all text-sm"
+              className="w-full bg-surface-container border border-outline focus:border-electric-cyan rounded-lg py-2.5 px-4 text-pure-ink placeholder-muted-steel focus:outline-none focus:ring-1 focus:ring-electric-cyan transition-all text-base sm:text-sm"
               placeholder="operator@system.local"
               required
             />
           </div>
 
           <div className="flex flex-col gap-2">
-            <label className="font-mono text-xs text-muted-steel uppercase tracking-widest">Password</label>
+            <label htmlFor="password" className="font-mono text-xs text-muted-steel uppercase tracking-widest">Password</label>
             <input
+              id="password"
               type="password"
+              autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-surface-container border border-outline focus:border-electric-cyan rounded-lg py-2.5 px-4 text-pure-ink placeholder-muted-steel focus:outline-none focus:ring-1 focus:ring-electric-cyan transition-all text-sm"
+              className="w-full bg-surface-container border border-outline focus:border-electric-cyan rounded-lg py-2.5 px-4 text-pure-ink placeholder-muted-steel focus:outline-none focus:ring-1 focus:ring-electric-cyan transition-all text-base sm:text-sm"
               placeholder="••••••••"
               required
             />
@@ -119,6 +151,6 @@ export default function Login() {
           </button>
         </form>
       </div>
-    </div>
+    </main>
   );
 }

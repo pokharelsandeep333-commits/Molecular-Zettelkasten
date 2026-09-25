@@ -1,124 +1,66 @@
 import { NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
 import path from 'path';
-import matter from 'gray-matter';
-
-const getVaultPath = () => process.env.VAULT_PATH || '';
-
-async function findFileRecursive(dir: string, targetName: string): Promise<string | null> {
-  try {
-    const entries = await fs.readdir(dir, { withFileTypes: true });
-    for (const entry of entries) {
-      if (entry.name.startsWith('.') || entry.name.startsWith('_')) continue;
-      const fullPath = path.join(dir, entry.name);
-      if (entry.isDirectory()) {
-        const found = await findFileRecursive(fullPath, targetName);
-        if (found) return found;
-      } else {
-        if (entry.name.toLowerCase() === targetName.toLowerCase()) {
-          return fullPath;
-        }
-      }
-    }
-  } catch {
-    // Ignore read errors in subdirectories
-  }
-  return null;
-}
+import { guard } from '@/lib/firebase-admin';
+import {
+  locateVaultFile,
+  parseFrontMatter,
+  normalizeTags,
+  toDateString,
+  toVaultSlug,
+  RAW_MIME_TYPES,
+} from '@/lib/vault';
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ slug: string[] }> }
 ) {
-  const vaultPath = getVaultPath();
-  if (!vaultPath) {
-    return NextResponse.json({ error: 'VAULT_PATH not configured' }, { status: 500 });
-  }
+  const { response } = await guard(request);
+  if (response) return response;
 
   const { slug: slugSegments } = await params;
-  const slug = slugSegments.map(decodeURIComponent).join('/');
-  
-  const rawExtensions = ['.pdf', '.docx', '.png', '.jpg', '.jpeg', '.gif', '.svg'];
+  const slug = slugSegments.join('/');
   const ext = path.extname(slug).toLowerCase();
 
-  if (rawExtensions.includes(ext)) {
-    const filePath = path.join(vaultPath, slug);
-    const resolvedPath = path.resolve(filePath);
-    const resolvedVault = path.resolve(vaultPath);
-    if (!resolvedPath.startsWith(resolvedVault)) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  // Attachments (PDF, images, docx) are served by /api/raw; describe them here.
+  if (RAW_MIME_TYPES[ext]) {
+    const filePath = await locateVaultFile(slug);
+    if (!filePath) {
+      return NextResponse.json({ error: 'Note not found' }, { status: 404 });
     }
-    
-    let actualFilePath = filePath;
-    try {
-      await fs.access(actualFilePath);
-    } catch {
-       const targetName = path.basename(filePath);
-       const foundPath = await findFileRecursive(vaultPath, targetName);
-       if (foundPath) {
-         actualFilePath = foundPath;
-       } else {
-         return NextResponse.json({ error: 'Note not found' }, { status: 404 });
-       }
-    }
-    
-    const actualRelativeSlug = path.relative(vaultPath, actualFilePath).replace(/\\/g, '/');
-
+    const relativeSlug = toVaultSlug(filePath);
     return NextResponse.json({
-      slug: actualRelativeSlug,
-      title: path.basename(actualFilePath),
+      slug: relativeSlug,
+      title: path.basename(filePath),
       tags: [],
       created: '',
       modified: '',
       content: '',
       frontmatter: {},
       isRawFile: true,
-      fileUrl: `/api/raw/${actualRelativeSlug.split('/').map(encodeURIComponent).join('/')}`,
-      fileType: ext
+      fileUrl: `/api/raw/${relativeSlug.split('/').map(encodeURIComponent).join('/')}`,
+      fileType: ext,
     });
   }
 
-  const filePath = path.join(vaultPath, `${slug}.md`);
-
-  // Prevent path traversal attacks
-  const resolvedPath = path.resolve(filePath);
-  const resolvedVault = path.resolve(vaultPath);
-  if (!resolvedPath.startsWith(resolvedVault)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
-
-  let actualFilePath = filePath;
-  let content = '';
-
-  try {
-    content = await fs.readFile(actualFilePath, 'utf-8');
-  } catch {
-    // Fallback: search recursively for the basename (case-insensitive)
-    const targetName = path.basename(filePath);
-    const foundPath = await findFileRecursive(vaultPath, targetName);
-    if (foundPath) {
-      actualFilePath = foundPath;
-      content = await fs.readFile(actualFilePath, 'utf-8');
-    } else {
-      return NextResponse.json({ error: 'Note not found' }, { status: 404 });
-    }
+  const filePath = await locateVaultFile(`${slug}.md`);
+  if (!filePath) {
+    return NextResponse.json({ error: 'Note not found' }, { status: 404 });
   }
 
   try {
-    const { data, content: body } = matter(content);
-    const title = data.title || path.basename(actualFilePath, '.md');
-    const tags: string[] = Array.isArray(data.tags) ? data.tags : (data.tags ? [data.tags] : []);
-
+    const { data, content: body } = parseFrontMatter(await fs.readFile(/*turbopackIgnore: true*/ filePath, 'utf-8'));
     return NextResponse.json({
-      slug,
-      title,
-      tags,
-      created: data.created || data.date || '',
-      modified: data.modified || data.updated || '',
+      slug: toVaultSlug(filePath).replace(/\.md$/, ''),
+      title: String(data.title || path.basename(filePath, '.md')),
+      tags: normalizeTags(data.tags),
+      created: toDateString(data.created || data.date),
+      modified: toDateString(data.modified || data.updated),
       content: body,
       frontmatter: data,
     });
-  } catch {
+  } catch (error) {
+    console.error('Error parsing note:', error);
     return NextResponse.json({ error: 'Error parsing note' }, { status: 500 });
   }
 }

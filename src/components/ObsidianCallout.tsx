@@ -111,6 +111,7 @@ export const ObsidianCallout: React.FC<ObsidianCalloutProps> = ({
         onClick={toggleCollapsed}
         role={foldable ? 'button' : undefined}
         tabIndex={foldable ? 0 : undefined}
+        aria-expanded={foldable ? !isCollapsed : undefined}
         onKeyDown={
           foldable
             ? (e) => {
@@ -153,8 +154,10 @@ export const ObsidianCallout: React.FC<ObsidianCalloutProps> = ({
       <div
         className={`callout-content ${isCollapsed ? 'callout-collapsed' : ''}`}
       >
-        <div className="px-4 pb-3 text-sm text-on-surface/90 leading-relaxed [&>p:last-child]:mb-0">
-          {children}
+        <div>
+          <div className="px-4 pb-3 text-sm text-on-surface/90 leading-relaxed [&>p:last-child]:mb-0">
+            {children}
+          </div>
         </div>
       </div>
     </div>

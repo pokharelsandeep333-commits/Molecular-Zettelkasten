@@ -37,11 +37,11 @@ export async function loadAllVectors(): Promise<EmbeddingEntry[]> {
   
   const entries: EmbeddingEntry[] = [];
   try {
-    const files = await fs.readdir(smartEnvPath);
+    const files = await fs.readdir(/*turbopackIgnore: true*/ smartEnvPath);
     
     for (const file of files) {
       if (!file.endsWith('.ajson')) continue;
-      const content = await fs.readFile(path.join(smartEnvPath, file), 'utf-8');
+      const content = await fs.readFile(/*turbopackIgnore: true*/ path.join(smartEnvPath, file), 'utf-8');
       try {
         let jsonString = content.trim();
         if (jsonString.endsWith(',')) jsonString = jsonString.slice(0, -1);
@@ -53,7 +53,7 @@ export async function loadAllVectors(): Promise<EmbeddingEntry[]> {
             entries.push({ ...entry, key });
           }
         }
-      } catch (e) {
+      } catch {
         // Skip malformed files
         console.warn(`Failed to parse ajson file ${file}`);
       }
@@ -64,12 +64,21 @@ export async function loadAllVectors(): Promise<EmbeddingEntry[]> {
   return entries;
 }
 
+let pendingLoad: Promise<EmbeddingEntry[]> | null = null;
+
 export async function getCachedVectors(): Promise<EmbeddingEntry[]> {
-  const now = Date.now();
-  if (globalVectorCache && (now - lastCacheTime < CACHE_TTL_MS)) {
+  if (globalVectorCache && (Date.now() - lastCacheTime < CACHE_TTL_MS)) {
     return globalVectorCache;
   }
-  globalVectorCache = await loadAllVectors();
-  lastCacheTime = now;
-  return globalVectorCache;
+  // Concurrent requests share one load instead of each re-reading every .ajson file.
+  if (!pendingLoad) {
+    pendingLoad = loadAllVectors()
+      .then(entries => {
+        globalVectorCache = entries;
+        lastCacheTime = Date.now();
+        return entries;
+      })
+      .finally(() => { pendingLoad = null; });
+  }
+  return pendingLoad;
 }
