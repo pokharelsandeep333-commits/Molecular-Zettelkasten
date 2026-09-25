@@ -69,7 +69,7 @@ src/
 
 The application is containerized and deployed automatically to **AWS EC2** using a robust CI/CD pipeline. Here is how the official instance runs:
 
-1.  **Standalone Next.js:** Optimized Docker builds using `output: 'standalone'` on a `node:24-slim` environment to support `glibc` requirements. C++ dependencies like `@xenova/transformers` are properly configured in `next.config.ts`.
+1.  **Standalone Next.js:** Optimized Docker builds using `output: 'standalone'` on a `node:24-slim` environment to support `glibc` requirements. Native dependencies for `@huggingface/transformers` (ONNX Runtime, sharp) are marked external in `next.config.ts` and copied into the image by the `Dockerfile`.
 2.  **GitHub Actions:** A multi-stage pipeline running ESLint (strict React 19 hooks purity checks), npm dependency auditing, Gitleaks secret scanning, Vitest unit tests, and finally building & pushing the image to Docker Hub on every commit to the `main` branch.
 3.  **Watchtower (Zero-Downtime):** The EC2 server runs Watchtower to automatically pull the latest image from Docker Hub and restart the container, ensuring continuous delivery.
 4.  **Vault Synchronization:** A utility script (`ec2-deployment/sync-vault.sh`) is included to pull the latest Obsidian vault updates from the remote repository to the EC2 server. This is typically configured as a cron job to keep the live web app automatically in sync with your notes.
@@ -117,6 +117,9 @@ The application is containerized and deployed automatically to **AWS EC2** using
     NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
     NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=your_measurement_id
 
+    # Accounts allowed to sign in (comma-separated; defaults to the owner's address)
+    NEXT_PUBLIC_ALLOWED_EMAILS=you@example.com
+
     # Firebase Admin Config (Server-side for JWT Verification)
     FIREBASE_CLIENT_EMAIL=your_service_account_email
     FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
@@ -145,6 +148,14 @@ This mimics the official setup and is the most robust way to host it, as it supp
 Deploying to a serverless environment like Vercel requires some architectural changes because this app relies on reading a local file system:
 * **Asset Bundling:** Serverless functions cannot easily read a large external folder of markdown files natively. You must place your Obsidian Vault directly inside the project directory before building so Vercel can bundle the files into the deployment.
 * **Sync Limitations:** This workaround makes it harder to continuously sync new notes, as every new note saved will require triggering a full Vercel rebuild.
+
+## 🔐 Security Model
+
+*   **Every API route is authenticated** with a Firebase ID token (`Authorization: Bearer`) and restricted to verified, allowlisted emails. Vault media loaded by `<img>`/`<iframe>` authenticates with an httpOnly cookie scoped to `/api/raw`, set by `/api/session`.
+*   **Vault access** goes through `src/lib/vault.ts`, which resolves real paths, blocks traversal and hidden folders (`.obsidian`, `.smart-env`, `_templates`), and serves only allowlisted media types.
+*   **Rate limits** (in-memory, per user): 60 req/min general, 10 req/min for the AI assistant, and a per-IP throttle on failed authentication.
+*   **Headers:** a per-request nonce CSP (`src/proxy.ts`), HSTS, `X-Frame-Options`, `nosniff`, and a strict referrer policy (`next.config.ts`).
+*   **Firestore:** chat documents must be restricted to their verified owner by Firestore security rules. The rules file (`firestore.rules`) is kept locally and gitignored; deploy it with `firebase deploy --only firestore:rules`.
 
 ## 🧠 Development Guidelines
 

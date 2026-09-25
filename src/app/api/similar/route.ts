@@ -1,26 +1,21 @@
 import { NextResponse } from 'next/server';
-import { verifyAuth } from '@/lib/firebase-admin';
+import { guard } from '@/lib/firebase-admin';
 import { getCachedVectors, cosineSimilarity, MODEL_KEY } from '@/lib/vectorCache';
 
-const SMART_ENV_PATH = process.env.SMART_ENV_PATH || '';
-
 export async function GET(request: Request) {
-  try {
-    await verifyAuth(request);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unauthorized';
-    return NextResponse.json({ error: message }, { status: 401 });
-  }
+  const { response } = await guard(request);
+  if (response) return response;
 
   const { searchParams } = new URL(request.url);
   const slug = searchParams.get('slug');
-  const limit = parseInt(searchParams.get('limit') || '30', 10);
+  const parsedLimit = parseInt(searchParams.get('limit') || '30', 10);
+  const limit = Number.isFinite(parsedLimit) ? Math.min(Math.max(parsedLimit, 1), 100) : 30;
 
   if (!slug) {
     return NextResponse.json({ error: 'Query parameter "slug" is required' }, { status: 400 });
   }
 
-  if (!SMART_ENV_PATH) {
+  if (!process.env.SMART_ENV_PATH) {
     return NextResponse.json({ error: 'SMART_ENV_PATH not configured' }, { status: 500 });
   }
 
@@ -45,7 +40,7 @@ export async function GET(request: Request) {
 
     const activeNoteBase = activeNoteEntry.key.replace(/^smart_sources:/, '').split('.md')[0];
 
-    const scoredMap = new Map();
+    const scoredMap = new Map<string, { uniqueId: string; key: string; rawKey: string; score: number; lines?: number[]; size?: number }>();
 
     allEntries
       .filter(entry => {
@@ -61,7 +56,7 @@ export async function GET(request: Request) {
         const score = cosineSimilarity(queryVec, entry.embeddings![MODEL_KEY]!.vec);
         
         // If we haven't seen this file yet, or if this block has a higher score, update it
-        if (!scoredMap.has(baseKey) || scoredMap.get(baseKey).score < score) {
+        if (!scoredMap.has(baseKey) || scoredMap.get(baseKey)!.score < score) {
           scoredMap.set(baseKey, {
             uniqueId: entry.key,
             key: baseKey,
@@ -79,7 +74,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ results: scored, slug });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    return NextResponse.json({ error: `Search failed: ${message}` }, { status: 500 });
+    console.error('Similar-notes search failed:', error);
+    return NextResponse.json({ error: 'Search failed' }, { status: 500 });
   }
 }

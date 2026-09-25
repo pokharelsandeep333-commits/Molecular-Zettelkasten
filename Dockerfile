@@ -58,9 +58,13 @@ RUN chown nextjs:nodejs .next
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# IMPORTANT FIX for @xenova/transformers / onnxruntime-node:
-# Next.js standalone tracing misses the native C++ .so libraries. We must manually copy them.
+# Native binaries for @huggingface/transformers (semantic search): Next.js standalone
+# tracing misses the dynamically loaded onnxruntime .so files and sharp's
+# platform package (@img/*), so copy them explicitly.
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/onnxruntime-node ./node_modules/onnxruntime-node
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/onnxruntime-common ./node_modules/onnxruntime-common
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/sharp ./node_modules/sharp
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@img ./node_modules/@img
 
 USER nextjs
 

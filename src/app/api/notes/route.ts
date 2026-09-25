@@ -1,99 +1,44 @@
 import { NextResponse } from 'next/server';
-import { verifyAuth } from '@/lib/firebase-admin';
-import { promises as fs } from 'fs';
-import path from 'path';
-import matter from 'gray-matter';
+import { guard } from '@/lib/firebase-admin';
+import { getAllNotes, getVaultPath } from '@/lib/vault';
 
-const getVaultPath = () => process.env.VAULT_PATH || '';
+export type { NoteMetadata } from '@/lib/vault';
 
-export interface NoteMetadata {
-  slug: string;
-  title: string;
-  tags: string[];
-  created: string;
-  modified: string;
-  excerpt: string;
-}
-
-async function getMarkdownFiles(dir: string, baseDir: string = dir): Promise<string[]> {
-  const files: string[] = [];
-  try {
-    const entries = await fs.readdir(dir, { withFileTypes: true });
-    for (const entry of entries) {
-      if (entry.name.startsWith('.') || entry.name.startsWith('_')) continue;
-      const fullPath = path.join(dir, entry.name);
-      if (entry.isDirectory()) {
-        const nested = await getMarkdownFiles(fullPath, baseDir);
-        files.push(...nested);
-      } else if (entry.name.endsWith('.md')) {
-        files.push(fullPath);
-      }
-    }
-  } catch {
-    // Skip unreadable directories
-  }
-  return files;
-}
-
-function slugify(filePath: string, baseDir: string): string {
-  const relative = path.relative(baseDir, filePath);
-  return relative.replace(/\\/g, '/').replace(/\.md$/, '');
-}
+const clampInt = (value: string | null, fallback: number, min: number, max: number) => {
+  const n = parseInt(value ?? '', 10);
+  return Number.isFinite(n) ? Math.min(Math.max(n, min), max) : fallback;
+};
 
 export async function GET(request: Request) {
-  try {
-    await verifyAuth(request);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unauthorized';
-    return NextResponse.json({ error: message }, { status: 401 });
-  }
+  const { response } = await guard(request);
+  if (response) return response;
 
-  const vaultPath = getVaultPath();
-  if (!vaultPath) {
-    return NextResponse.json({ error: 'VAULT_PATH not configured' }, { status: 500 });
+  if (!getVaultPath()) {
+    return NextResponse.json({ error: 'Vault is not configured' }, { status: 500 });
   }
 
   const { searchParams } = new URL(request.url);
-  const query = searchParams.get('q')?.toLowerCase() || '';
-  const limit = parseInt(searchParams.get('limit') || '500', 10);
-  const tag = searchParams.get('tag') || '';
+  const query = (searchParams.get('q') || '').toLowerCase().slice(0, 200);
+  const tag = (searchParams.get('tag') || '').toLowerCase().slice(0, 100);
+  const limit = clampInt(searchParams.get('limit'), 500, 1, 5000);
+  // Optional exact-slug filter so search can resolve its hits without downloading every note.
+  const slugs = searchParams.getAll('slug').slice(0, 100);
+  const slugSet = slugs.length ? new Set(slugs) : null;
 
   try {
-    const files = await getMarkdownFiles(vaultPath);
-    const notes: NoteMetadata[] = [];
-
-    for (const filePath of files) {
-      const content = await fs.readFile(filePath, 'utf-8');
-      const { data, content: body } = matter(content);
-      const slug = slugify(filePath, vaultPath);
-      const title = data.title || path.basename(filePath, '.md');
-      const tags: string[] = Array.isArray(data.tags) ? data.tags : (data.tags ? [data.tags] : []);
-      const excerpt = body.replace(/#+\s/g, '').replace(/\[\[.*?\]\]/g, '').trim().slice(0, 200);
-
-      // Filter by tag if provided
-      if (tag && !tags.some(t => t.toLowerCase() === tag.toLowerCase())) continue;
-
-      // Filter by query (title + tags + excerpt)
+    const notes = (await getAllNotes()).filter(note => {
+      if (slugSet && !slugSet.has(note.slug)) return false;
+      if (tag && !note.tags.some(t => t.toLowerCase() === tag)) return false;
       if (query) {
-        const haystack = `${title} ${tags.join(' ')} ${excerpt}`.toLowerCase();
-        if (!haystack.includes(query)) continue;
+        const haystack = `${note.title} ${note.tags.join(' ')} ${note.excerpt}`.toLowerCase();
+        if (!haystack.includes(query)) return false;
       }
-
-      notes.push({
-        slug,
-        title,
-        tags,
-        created: data.created || data.date || '',
-        modified: data.modified || data.updated || '',
-        excerpt,
-      });
-
-      if (notes.length >= limit) break;
-    }
+      return true;
+    }).slice(0, limit);
 
     return NextResponse.json({ notes, total: notes.length });
   } catch (err) {
-    console.error("Error reading file:", err);
+    console.error('Error reading vault:', err);
     return NextResponse.json({ error: 'Failed to read vault' }, { status: 500 });
   }
 }

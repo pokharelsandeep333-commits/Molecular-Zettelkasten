@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { Folder, FolderOpen, FileText, Search, ChevronRight, ChevronDown, LogOut, PanelLeftClose } from 'lucide-react';
+import React, { useState, useEffect, useSyncExternalStore } from 'react';
+import { Folder, FolderOpen, FileText, Search, ChevronRight, ChevronDown, LogOut, PanelLeftClose, X, Loader2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { authFetchJson } from '@/lib/authFetch';
 import type { TreeNode } from '@/app/api/tree/route';
 
 interface LeftSidebarProps {
@@ -10,32 +11,33 @@ interface LeftSidebarProps {
   setIsLeftSidebarOpen: (v: boolean) => void;
 }
 
+const isMacPlatform = () => /Mac|iPhone|iPad/.test(navigator.userAgent);
+
 const FileTreeNode: React.FC<{
   node: TreeNode;
   level: number;
   onNodeClick: (slug: string) => void;
   activeNoteSlug: string | null;
 }> = ({ node, level, onNodeClick, activeNoteSlug }) => {
-  const [isOpen, setIsOpen] = useState(false);
   const isFile = node.type === 'file';
   const isActive = activeNoteSlug === node.path;
+  // Folders on the path to the open note start expanded.
+  const [isOpen, setIsOpen] = useState(() => !isFile && !!activeNoteSlug?.startsWith(`${node.path}/`));
 
   return (
     <div className="select-none">
-      <div
-        className={`flex items-center py-1 px-2 cursor-pointer rounded-sm mx-2 text-sm transition-colors ${
+      <button
+        type="button"
+        className={`w-[calc(100%-1rem)] flex items-center py-2 md:py-1 px-2 rounded-sm mx-2 text-sm text-left transition-colors ${
           isActive
             ? 'bg-[#00F0FF]/15 text-[#00F0FF] font-medium'
             : 'text-[#00F0FF]/50 hover:bg-[#00F0FF]/10 hover:text-[#00F0FF]/90'
         }`}
         style={{ paddingLeft: `${(level * 12) + 8}px` }}
-        onClick={() => {
-          if (isFile) {
-            onNodeClick(node.path);
-          } else {
-            setIsOpen(!isOpen);
-          }
-        }}
+        onClick={() => (isFile ? onNodeClick(node.path) : setIsOpen(!isOpen))}
+        aria-expanded={isFile ? undefined : isOpen}
+        aria-current={isActive ? 'page' : undefined}
+        title={node.name}
       >
         <span className={`mr-1.5 shrink-0 ${isActive ? 'text-[#00F0FF]' : 'text-[#00F0FF]/40'}`}>
           {isFile ? (
@@ -50,13 +52,13 @@ const FileTreeNode: React.FC<{
           </span>
         )}
         <span className="truncate">{node.name}</span>
-      </div>
-      
+      </button>
+
       {!isFile && isOpen && node.children && (
-        <div className="flex flex-col mt-0.5">
-          {node.children.map((child, i) => (
+        <div className="flex flex-col mt-0.5" role="group">
+          {node.children.map((child) => (
             <FileTreeNode
-              key={i}
+              key={child.path}
               node={child}
               level={level + 1}
               onNodeClick={onNodeClick}
@@ -76,53 +78,64 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
   setIsLeftSidebarOpen
 }) => {
   const [treeData, setTreeData] = useState<TreeNode[]>([]);
+  const [treeState, setTreeState] = useState<'loading' | 'ready' | 'error'>('loading');
   const { user, logout } = useAuth();
+  const isMac = useSyncExternalStore(() => () => {}, isMacPlatform, () => true);
 
   useEffect(() => {
-    const fetchTree = async () => {
-      let token = '';
-      if (user) {
-        token = await user.getIdToken();
-      }
-      
-      fetch('/api/tree', {
-        headers: {
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-        }
+    if (!user) return;
+    let cancelled = false;
+    authFetchJson<{ tree: TreeNode[] }>('/api/tree')
+      .then(data => {
+        if (cancelled) return;
+        setTreeData(data.tree || []);
+        setTreeState('ready');
       })
-        .then(res => res.json())
-        .then(data => {
-          if (data.tree) setTreeData(data.tree);
-        });
-    };
-    fetchTree();
+      .catch(err => {
+        if (cancelled) return;
+        console.error('Failed to load vault tree', err);
+        setTreeState('error');
+      });
+    return () => { cancelled = true; };
   }, [user]);
+
+  const closeOnSmallScreens = () => {
+    if (window.matchMedia('(max-width: 767px)').matches) setIsLeftSidebarOpen(false);
+  };
 
   return (
     <>
       {/* Mobile Backdrop Overlay */}
       {isLeftSidebarOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/80 backdrop-blur-sm z-40 md:hidden transition-opacity"
           onClick={() => setIsLeftSidebarOpen(false)}
+          aria-hidden="true"
         />
       )}
 
       {/* Sidebar Content */}
-      <div className={`fixed inset-y-0 left-0 h-full flex flex-col bg-[#001E3C]/40 backdrop-blur-md border-[#00F0FF]/20 shrink-0 z-50 transition-all duration-300 ease-in-out md:relative overflow-hidden ${
-        isLeftSidebarOpen ? 'translate-x-0 shadow-2xl w-[280px] border-r' : '-translate-x-full md:translate-x-0 w-[280px] md:w-0 border-r-0'
-      }`}>
-      <div className="w-[280px] min-w-[280px] h-full flex flex-col">
-      
+      <nav
+        aria-label="Vault"
+        className={`fixed inset-y-0 left-0 h-full flex flex-col bg-[#02050C]/95 md:bg-[#001E3C]/40 backdrop-blur-md border-[#00F0FF]/20 shrink-0 z-50 transition-all duration-300 ease-in-out md:relative overflow-hidden ${
+          isLeftSidebarOpen ? 'translate-x-0 shadow-2xl w-[min(85vw,300px)] md:w-[280px] border-r' : '-translate-x-full md:translate-x-0 w-[min(85vw,300px)] md:w-0 border-r-0'
+        }`}
+        // Keep the collapsed drawer out of the tab order.
+        inert={!isLeftSidebarOpen}
+      >
+      <div className="w-[min(85vw,300px)] md:w-[280px] md:min-w-[280px] h-full flex flex-col pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
+
       {/* App Header */}
       <div className="h-14 flex items-center justify-between px-5 shrink-0 border-b border-[#00F0FF]/20">
         <span className="font-tech text-transparent bg-clip-text bg-gradient-to-r from-[#00F0FF] to-white tracking-widest text-lg font-bold">NEURAL MATRIX</span>
         <button
           onClick={() => setIsLeftSidebarOpen(false)}
-          className="text-[#00F0FF]/60 hover:text-[#00F0FF] transition-colors p-1 rounded-md hover:bg-[#00F0FF]/10 hidden md:flex"
-          title="Collapse Sidebar"
+          className="text-[#00F0FF]/60 hover:text-[#00F0FF] transition-colors p-1.5 rounded-md hover:bg-[#00F0FF]/10"
+          title="Collapse Sidebar (Ctrl/Cmd + B)"
+          aria-label="Close sidebar"
         >
-          <PanelLeftClose size={18} />
+          <X size={18} className="md:hidden" />
+          <PanelLeftClose size={18} className="hidden md:block" />
         </button>
       </div>
 
@@ -133,30 +146,43 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
 
       <div className="px-4 py-2 mb-2">
         <button
-          onClick={() => window.dispatchEvent(new CustomEvent('open-omni-search'))}
-          className="w-full bg-[#00F0FF]/5 hover:bg-[#00F0FF]/15 text-[#00F0FF]/80 rounded-md py-1.5 px-3 text-xs font-mono tracking-wider flex items-center justify-between transition-colors border border-[#00F0FF]/20 hover:border-[#00F0FF]/50 hover:shadow-[0_0_15px_rgba(0,240,255,0.2)]"
+          onClick={() => {
+            closeOnSmallScreens();
+            window.dispatchEvent(new CustomEvent('open-omni-search'));
+          }}
+          className="w-full bg-[#00F0FF]/5 hover:bg-[#00F0FF]/15 text-[#00F0FF]/80 rounded-md py-2 md:py-1.5 px-3 text-xs font-mono tracking-wider flex items-center justify-between transition-colors border border-[#00F0FF]/20 hover:border-[#00F0FF]/50 hover:shadow-[0_0_15px_rgba(0,240,255,0.2)]"
         >
           <div className="flex items-center gap-2">
             <Search size={13} className="text-[#00F0FF]/70" />
             <span>OMNI-SEARCH</span>
           </div>
-          <span className="font-sans text-[10px] bg-[#02050C] text-[#00F0FF]/70 border border-[#00F0FF]/30 px-1.5 py-0.5 rounded font-medium">⌘K</span>
+          <span className="hidden md:inline font-sans text-[10px] bg-[#02050C] text-[#00F0FF]/70 border border-[#00F0FF]/30 px-1.5 py-0.5 rounded font-medium">
+            {isMac ? '⌘K' : 'Ctrl K'}
+          </span>
         </button>
       </div>
 
       {/* Tab Content */}
-      <div className="flex-1 overflow-y-auto py-2 custom-scrollbar">
+      <div className="flex-1 overflow-y-auto overscroll-contain py-2 custom-scrollbar">
+        {treeState === 'loading' && (
+          <div className="flex items-center gap-2 px-5 py-3 text-[#00F0FF]/50 text-xs font-mono tracking-widest" role="status">
+            <Loader2 size={14} className="animate-spin" /> LOADING VAULT...
+          </div>
+        )}
+        {treeState === 'error' && (
+          <div className="px-5 py-3 text-red-300/80 text-xs font-mono" role="alert">
+            Could not load the vault. Try refreshing.
+          </div>
+        )}
         <div className="flex flex-col gap-0.5">
-          {treeData.map((node, i) => (
+          {treeData.map((node) => (
             <FileTreeNode
-              key={i}
+              key={node.path}
               node={node}
               level={0}
               onNodeClick={(slug) => {
                 onNodeClick(slug);
-                if (window.innerWidth < 768) {
-                  setIsLeftSidebarOpen(false);
-                }
+                closeOnSmallScreens();
               }}
               activeNoteSlug={activeNoteSlug}
             />
@@ -170,9 +196,10 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
           <div className="flex items-center gap-3">
             {user.photoURL ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img 
-                src={user.photoURL} 
-                alt="Profile" 
+              <img
+                src={user.photoURL}
+                alt=""
+                referrerPolicy="no-referrer"
                 className="w-8 h-8 rounded-full border border-[#00F0FF]/40 shadow-[0_0_8px_rgba(0,240,255,0.2)] shrink-0"
               />
             ) : (
@@ -182,21 +209,21 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
             )}
             <div className="flex-1 min-w-0">
               <p className="text-[11px] text-white/90 font-medium truncate">{user.displayName || 'User'}</p>
-              <p className="text-[9px] text-[#00F0FF]/40 font-mono tracking-wider truncate">{user.email}</p>
+              <p className="text-[10px] text-[#00F0FF]/50 font-mono tracking-wider truncate">{user.email}</p>
             </div>
             <button
               onClick={logout}
-              className="p-1.5 rounded-md text-[#00F0FF]/40 hover:text-red-400 hover:bg-red-500/10 transition-colors shrink-0"
+              className="p-2 rounded-md text-[#00F0FF]/50 hover:text-red-400 hover:bg-red-500/10 transition-colors shrink-0"
               title="Sign Out"
+              aria-label="Sign out"
             >
-              <LogOut size={14} />
+              <LogOut size={16} />
             </button>
           </div>
         </div>
       )}
       </div>
-      </div>
+      </nav>
     </>
   );
 };
-
