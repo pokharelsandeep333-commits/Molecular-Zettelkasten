@@ -2,7 +2,7 @@
   <img src="https://img.shields.io/badge/Status-Online-00F0FF?style=for-the-badge&logo=google" alt="Status" />
   <img src="https://img.shields.io/badge/Gemini-Interactions_API-02050C?style=for-the-badge&logo=google" alt="Gemini" />
   <img src="https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=next.js" alt="Next.js" />
-  <img src="https://img.shields.io/badge/Deployment-AWS_EC2-FF9900?style=for-the-badge&logo=amazonaws" alt="AWS" />
+  <img src="https://img.shields.io/badge/Deployment-Self--hosted-F38020?style=for-the-badge&logo=cloudflare" alt="Self-hosted" />
   <img src="https://img.shields.io/badge/React-19-blue?style=for-the-badge&logo=react" alt="React 19" />
 </div>
 
@@ -67,12 +67,14 @@ src/
 
 ## ⚙️ Architecture & Deployment
 
-The application is containerized and deployed automatically to **AWS EC2** using a robust CI/CD pipeline. Here is how the official instance runs:
+The application is containerized and deployed automatically to a self-hosted Docker server using a robust CI/CD pipeline. Here is how the official instance runs:
+
+> **Moved 2026-10-28:** the official instance moved off AWS EC2 to a Hyper-V VM on a homelab machine, reached only through a Cloudflare Tunnel. This is temporary until a cloud provider is picked. Public URLs are unchanged.
 
 1.  **Standalone Next.js:** Optimized Docker builds using `output: 'standalone'` on a `node:24-slim` environment to support `glibc` requirements. Native dependencies for `@huggingface/transformers` (ONNX Runtime, sharp) are marked external in `next.config.ts` and copied into the image by the `Dockerfile`.
 2.  **GitHub Actions:** A multi-stage pipeline running ESLint (strict React 19 hooks purity checks), npm dependency auditing, Gitleaks secret scanning, Vitest unit tests, and finally building & pushing the image to Docker Hub on every commit to the `main` branch.
-3.  **Watchtower (Zero-Downtime):** The EC2 server runs Watchtower to automatically pull the latest image from Docker Hub and restart the container, ensuring continuous delivery.
-4.  **Vault Synchronization:** A utility script (`ec2-deployment/sync-vault.sh`) is included to pull the latest Obsidian vault updates from the remote repository to the EC2 server. This is typically configured as a cron job to keep the live web app automatically in sync with your notes.
+3.  **Watchtower (Zero-Downtime):** The server runs Watchtower, which checks Docker Hub every 5 minutes, pulls the latest image and restarts the container, ensuring continuous delivery.
+4.  **Vault Synchronization:** A `sync-vault.sh` script on the server pulls the latest Obsidian vault updates from the remote repository. It runs as a cron job to keep the live web app automatically in sync with your notes.
 
 ## 🛠️ Local Development
 
@@ -137,12 +139,12 @@ The application is containerized and deployed automatically to **AWS EC2** using
 If you want to host your own Molecular Zettelkasten, you must handle a few key configuration changes depending on your target environment. 
 
 ### Option A: Docker on a VPS (AWS EC2, DigitalOcean, etc.)
-This mimics the official setup and is the most robust way to host it, as it supports persistent access to your Obsidian vault files. When deploying, consider the following requirements:
+This is closest to the official setup (which uses a Cloudflare Tunnel instead of Nginx and Certbot) and is the most robust way to host it, as it supports persistent access to your Obsidian vault files. When deploying, consider the following requirements:
 * **GitHub Actions Pipeline:** You must configure all required GitHub Secrets (Firebase API keys, DockerHub credentials) in your forked repository to enable the CI/CD pipeline.
-* **Environment Variables:** Update the `.env` variables in the `ec2-deployment` folder before running `docker-compose up -d` on your server. 
+* **Environment Variables:** Put the `.env` variables next to your `docker-compose.yml` before running `docker compose up -d` on your server. 
   > **CRITICAL WARNING:** When formatting the `FIREBASE_PRIVATE_KEY` in your server's `.env` file, you must enclose the entire key in exactly one pair of double quotes and ensure there are no leading spaces or trailing extra quotes (e.g., `FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"`). Failure to format this strictly will cause the Firebase Admin SDK to crash, resulting in persistent `401 Unauthorized` API errors.
 * **Reverse Proxy & SSL:** You will need to configure an Nginx reverse proxy to route external web traffic to the Docker container (running on port 3000) and secure your domain using Certbot/Let's Encrypt for SSL.
-* **Automated Syncing:** Configure the provided `sync-vault.sh` script as a cron job on your server to automatically pull the latest changes from your remote Obsidian vault.
+* **Automated Syncing:** Set up a vault-sync script (the official server uses `sync-vault.sh`) as a cron job on your server to automatically pull the latest changes from your remote Obsidian vault.
 
 ### Option B: Vercel / Serverless (Advanced)
 Deploying to a serverless environment like Vercel requires some architectural changes because this app relies on reading a local file system:
