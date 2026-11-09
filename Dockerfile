@@ -1,4 +1,6 @@
-FROM node:24-slim AS base
+# Pinned by digest (node:24-bookworm-slim, Node 24.22.2, Debian 12.15, apt 2.6.2).
+# Bump the digest to pick up base-image security fixes.
+FROM node:24-bookworm-slim@sha256:01d566e8d94d8c619591d78652babfccd3c6992a3dffa9ed5ab39e11cf6c70e9 AS base
 
 # Install dependencies only when needed
 FROM base AS deps
@@ -43,6 +45,12 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+
+# The runtime only runs `node server.js`. Drop the package managers bundled with
+# the base image; npm's own node_modules (undici, glob, minimatch, ...) carry CVEs.
+RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack \
+    /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack \
+    /usr/local/bin/yarn /usr/local/bin/yarnpkg /opt/yarn-v*
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
