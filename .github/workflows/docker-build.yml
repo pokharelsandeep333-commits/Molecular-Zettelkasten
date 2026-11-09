@@ -6,7 +6,7 @@
 #   2. Audit       → npm audit checks for vulnerable packages
 #   3. Secrets     → Gitleaks scans for exposed credentials
 #   4. Test        → Vitest runs unit tests
-#   5. Build+Push  → Docker image to Docker Hub
+#   5. Build+Scan+Push → build image locally, Trivy scan, push to Docker Hub
 #   6. Deploy      → Watchtower auto-detects (no action needed)
 # ============================================================
 
@@ -123,6 +123,19 @@ jobs:
     # Only push on main branch (not on pull requests)
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
+    permissions:
+      contents: read             # checkout
+      security-events: write     # upload Trivy SARIF to code scanning
+
+    env:
+      IMAGE: pokharelsandeep333/molecular-zettelkasten
+      # Trivy v0.76.1, pinned by digest. Run as a plain container: do NOT switch to
+      # aquasecurity/trivy-action or setup-trivy (tags hijacked in the March 2026 attack).
+      TRIVY_IMAGE: aquasec/trivy@sha256:790fd66d1697395d8693d1acaa1ea702406a20f109b6fc7bac8db623eca6c06c
+      # REPORT-ONLY: findings go to the log and the Security tab, the push still happens.
+      # To BLOCK the push on fixable CRITICAL/HIGH findings, change "0" to "1".
+      TRIVY_EXIT_CODE: "0"
+
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -136,7 +149,75 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: 🐳 Build and Push Docker Image
+      # Build once into the local Docker daemon so it can be scanned before anything
+      # is pushed. The push step below reuses this builder's layer cache, so it pushes
+      # the same layers that were scanned.
+      - name: 🐳 Build Docker Image (local, for scanning)
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          file: ./Dockerfile
+          load: true
+          push: false
+          tags: ${{ env.IMAGE }}:${{ github.sha }}
+          # Anchored so the push step below uses exactly the same build args.
+          build-args: &build-args |
+            NEXT_PUBLIC_FIREBASE_API_KEY=${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
+            NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
+            NEXT_PUBLIC_FIREBASE_PROJECT_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
+            NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=${{ secrets.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}
+            NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
+            NEXT_PUBLIC_FIREBASE_APP_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
+            NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: 📅 Trivy DB cache key
+        id: trivy-date
+        run: echo "date=$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+
+      # One cache entry per day; older entries are restored as a fallback and Trivy
+      # refreshes them only if they are stale.
+      - name: 💾 Cache Trivy DB
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/trivy-cache/db
+          key: trivy-db-${{ steps.trivy-date.outputs.date }}
+          restore-keys: trivy-db-
+
+      # Everything Trivy touches lives in $RUNNER_TEMP, never in the checkout: an
+      # image.tar in the workspace would end up in the push step's build context.
+      # Runs as the runner user so the cached DB stays readable by actions/cache.
+      # No Docker socket is mounted; Trivy only reads the saved tar.
+      - name: 🛡️ Trivy scan (SARIF)
+        run: |
+          mkdir -p "$RUNNER_TEMP/trivy" "$RUNNER_TEMP/trivy-cache"
+          docker save "$IMAGE:$GITHUB_SHA" -o "$RUNNER_TEMP/trivy/image.tar"
+          docker run --rm --user "$(id -u):$(id -g)" \
+            -v "$RUNNER_TEMP/trivy:/w" -v "$RUNNER_TEMP/trivy-cache:/cache" \
+            "$TRIVY_IMAGE" image --cache-dir /cache --skip-version-check --timeout 15m \
+            --scanners vuln --input /w/image.tar \
+            --severity CRITICAL,HIGH --ignore-unfixed \
+            --exit-code 0 --format sarif --output /w/trivy.sarif
+
+      - name: 📤 Upload Trivy SARIF to code scanning
+        uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
+        with:
+          sarif_file: ${{ runner.temp }}/trivy/trivy.sarif
+          category: trivy-image-build
+
+      # Human-readable report. This is the gate: it fails the job (and skips the
+      # push) only when TRIVY_EXIT_CODE is "1" and fixable findings exist.
+      - name: 🛡️ Trivy report (table)
+        run: |
+          docker run --rm --user "$(id -u):$(id -g)" \
+            -v "$RUNNER_TEMP/trivy:/w" -v "$RUNNER_TEMP/trivy-cache:/cache" \
+            "$TRIVY_IMAGE" image --cache-dir /cache --skip-version-check --timeout 15m --skip-db-update \
+            --scanners vuln --input /w/image.tar \
+            --severity CRITICAL,HIGH --ignore-unfixed \
+            --exit-code "$TRIVY_EXIT_CODE" --format table
+
+      - name: 🐳 Push Docker Image
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
           context: .
@@ -145,14 +226,7 @@ jobs:
           tags: |
             pokharelsandeep333/molecular-zettelkasten:latest
             pokharelsandeep333/molecular-zettelkasten:${{ github.sha }}
-          build-args: |
-            NEXT_PUBLIC_FIREBASE_API_KEY=${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
-            NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
-            NEXT_PUBLIC_FIREBASE_PROJECT_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
-            NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=${{ secrets.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}
-            NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
-            NEXT_PUBLIC_FIREBASE_APP_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
-            NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID }}
+          build-args: *build-args
           cache-from: type=gha
           cache-to: type=gha,mode=max
 

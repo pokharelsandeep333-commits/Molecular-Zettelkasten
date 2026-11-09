@@ -1,0 +1,90 @@
+# ============================================================
+# 🛡️ Weekly Trivy scan of the image production runs
+# ============================================================
+# The build workflow scans each image before it is pushed. New CVEs keep being
+# published after that, so this rescans the image currently on Docker Hub
+# (:latest, the tag Watchtower deploys) and uploads the results to the
+# Security tab under their own category.
+#
+# The Docker Hub repo is public, so the pull needs no credentials. If it ever
+# goes private, add docker/login-action with the DOCKERHUB_USERNAME and
+# DOCKERHUB_TOKEN secrets (same pinned SHA as docker-build.yml) before the pull.
+# ============================================================
+
+name: 🛡️ Trivy Scan (Published Image)
+
+on:
+  schedule:
+    - cron: '23 6 * * 1'     # Mondays 06:23 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    name: 🛡️ Scan published image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read             # checkout
+      security-events: write     # upload Trivy SARIF to code scanning
+
+    env:
+      IMAGE: pokharelsandeep333/molecular-zettelkasten:latest
+      # Trivy v0.76.1, pinned by digest. Run as a plain container: do NOT switch to
+      # aquasecurity/trivy-action or setup-trivy (tags hijacked in the March 2026 attack).
+      TRIVY_IMAGE: aquasec/trivy@sha256:790fd66d1697395d8693d1acaa1ea702406a20f109b6fc7bac8db623eca6c06c
+      # REPORT-ONLY: findings go to the log and the Security tab, the run stays green.
+      # Change "0" to "1" to make this run fail (and notify you) on fixable CRITICAL/HIGH findings.
+      TRIVY_EXIT_CODE: "0"
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: 🐳 Pull published image
+        run: |
+          docker pull "$IMAGE"
+          digest=$(docker image inspect --format '{{index .RepoDigests 0}}' "$IMAGE")
+          echo "Scanning $digest"
+          echo "Scanned image: \`$digest\`" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: 📅 Trivy DB cache key
+        id: trivy-date
+        run: echo "date=$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+
+      # Same key scheme as docker-build.yml, so the two workflows share the DB.
+      - name: 💾 Cache Trivy DB
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/trivy-cache/db
+          key: trivy-db-${{ steps.trivy-date.outputs.date }}
+          restore-keys: trivy-db-
+
+      # No Docker socket is mounted; Trivy only reads the saved tar. Runs as the
+      # runner user so the cached DB stays readable by actions/cache.
+      - name: 🛡️ Trivy scan (SARIF)
+        run: |
+          mkdir -p "$RUNNER_TEMP/trivy" "$RUNNER_TEMP/trivy-cache"
+          docker save "$IMAGE" -o "$RUNNER_TEMP/trivy/image.tar"
+          docker run --rm --user "$(id -u):$(id -g)" \
+            -v "$RUNNER_TEMP/trivy:/w" -v "$RUNNER_TEMP/trivy-cache:/cache" \
+            "$TRIVY_IMAGE" image --cache-dir /cache --skip-version-check --timeout 15m \
+            --scanners vuln --input /w/image.tar \
+            --severity CRITICAL,HIGH --ignore-unfixed \
+            --exit-code 0 --format sarif --output /w/trivy.sarif
+
+      - name: 📤 Upload Trivy SARIF to code scanning
+        uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
+        with:
+          sarif_file: ${{ runner.temp }}/trivy/trivy.sarif
+          category: trivy-image-published
+
+      - name: 🛡️ Trivy report (table)
+        run: |
+          docker run --rm --user "$(id -u):$(id -g)" \
+            -v "$RUNNER_TEMP/trivy:/w" -v "$RUNNER_TEMP/trivy-cache:/cache" \
+            "$TRIVY_IMAGE" image --cache-dir /cache --skip-version-check --timeout 15m --skip-db-update \
+            --scanners vuln --input /w/image.tar \
+            --severity CRITICAL,HIGH --ignore-unfixed \
+            --exit-code "$TRIVY_EXIT_CODE" --format table
