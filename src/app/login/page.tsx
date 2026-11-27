@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, GoogleAuthProvider } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useAuth } from '@/context/AuthContext';
-import { Network } from 'lucide-react';
+import { Atom, ArrowRight, Eye, EyeOff, LockKeyhole } from 'lucide-react';
 
 const googleProvider = new GoogleAuthProvider();
 
@@ -43,12 +43,14 @@ export default function Login() {
   const { authError } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!auth) { setError('Sign-in is unavailable. Contact the vault administrator.'); return; }
     setError(null);
     setIsLoading(true);
     try {
@@ -60,6 +62,7 @@ export default function Login() {
   };
 
   const handleGoogleLogin = async () => {
+    if (!auth) { setError('Sign-in is unavailable. Contact the vault administrator.'); return; }
     setError(null);
     setIsGoogleLoading(true);
     try {
@@ -67,8 +70,14 @@ export default function Login() {
     } catch (err: unknown) {
       // Mobile browsers often block popups; a full-page redirect still works there.
       if ((err as { code?: string })?.code === 'auth/popup-blocked') {
-        await signInWithRedirect(auth, googleProvider);
-        return;
+        try {
+          await signInWithRedirect(auth, googleProvider);
+          return;
+        } catch (redirectError) {
+          setError(describeAuthError(redirectError, 'Google sign-in failed.'));
+          setIsGoogleLoading(false);
+          return;
+        }
       }
       setError(describeAuthError(err, 'Google sign-in failed.'));
       setIsGoogleLoading(false);
@@ -76,80 +85,53 @@ export default function Login() {
   };
 
   return (
-    <main className="min-h-dvh bg-[#02050C] flex items-center justify-center p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]">
-      <div className="w-full max-w-md bg-glass-surface backdrop-blur-md border border-whisper-border rounded-xl shadow-2xl p-6 sm:p-8 flex flex-col items-center">
-        <div className="w-12 h-12 rounded-lg bg-electric-cyan/20 border border-electric-cyan flex items-center justify-center mb-6">
-          <Network className="text-electric-cyan w-6 h-6" />
-        </div>
+    <main className="access-page">
+      <header className="access-header">
+        <div className="wordmark"><Atom aria-hidden="true" /><span>Molecular Zettelkasten</span></div>
+        <span className="privacy-label"><LockKeyhole size={14} aria-hidden="true" /> Private vault</span>
+      </header>
 
-        <h1 className="text-2xl font-bold text-pure-ink mb-2">Sign In</h1>
-        <p className="text-muted-steel text-sm mb-8 text-center">
-          Secure access to the Molecular Zettelkasten knowledge graph.
-        </p>
-
-        {(error || authError) && (
-          <div role="alert" className="w-full bg-red-950/40 border border-red-500/50 text-red-300 text-sm p-3 rounded-lg mb-6">
-            {error || authError}
+      <div className="access-layout">
+        <section className="study-cover" aria-labelledby="cover-title">
+          <div className="cover-image" />
+          <div className="cover-copy">
+            <h1 id="cover-title">Molecular<br /><em>Zettelkasten</em></h1>
+            <p>A personal knowledge base for connected notes and research.</p>
           </div>
-        )}
+        </section>
 
-        {/* Google Sign In */}
-        <button
-          type="button"
-          onClick={handleGoogleLogin}
-          disabled={isGoogleLoading || isLoading}
-          className="w-full flex items-center justify-center gap-3 bg-surface-container hover:bg-surface-container-high border border-whisper-border hover:border-electric-cyan/40 text-pure-ink font-medium py-3 rounded-lg transition-all active:-translate-y-px disabled:opacity-50 mb-6"
-        >
-          <GoogleIcon />
-          {isGoogleLoading ? 'Signing in...' : 'Continue with Google'}
-        </button>
-
-        {/* Divider */}
-        <div className="w-full flex items-center gap-3 mb-6">
-          <div className="flex-1 h-px bg-whisper-border"></div>
-          <span className="text-muted-steel text-xs font-mono uppercase tracking-widest">or</span>
-          <div className="flex-1 h-px bg-whisper-border"></div>
-        </div>
-
-        {/* Email + Password */}
-        <form onSubmit={handleLogin} className="w-full flex flex-col gap-5">
-          <div className="flex flex-col gap-2">
-            <label htmlFor="email" className="font-mono text-xs text-muted-steel uppercase tracking-widest">Email</label>
-            <input
-              id="email"
-              type="email"
-              autoComplete="email"
-              inputMode="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-surface-container border border-outline focus:border-electric-cyan rounded-lg py-2.5 px-4 text-pure-ink placeholder-muted-steel focus:outline-none focus:ring-1 focus:ring-electric-cyan transition-all text-base sm:text-sm"
-              placeholder="operator@system.local"
-              required
-            />
+        <section className="access-form-panel" aria-labelledby="login-title">
+          <div className="access-form-inner">
+            <h2 id="login-title">Welcome back.</h2>
+            <p className="form-intro">Sign in to your research workspace.</p>
+            {(error || authError) && <p role="alert" className="form-alert">{error || authError}</p>}
+            <button type="button" className="google-button" onClick={handleGoogleLogin} disabled={isGoogleLoading || isLoading}>
+              <GoogleIcon /> {isGoogleLoading ? 'Signing in…' : 'Continue with Google'}
+            </button>
+            <div className="form-divider">or use email</div>
+            <form onSubmit={handleLogin} className="flex flex-col gap-5">
+              <div>
+                <label htmlFor="email">Email address</label>
+                <input id="email" type="email" autoComplete="email" inputMode="email" value={email}
+                  onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" required />
+              </div>
+              <div>
+                <label htmlFor="password">Password</label>
+                <div className="relative">
+                  <input id="password" type={showPassword ? 'text' : 'password'} autoComplete="current-password"
+                    value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter your password" required />
+                  <button type="button" className="password-toggle" aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    aria-pressed={showPassword} onClick={() => setShowPassword(!showPassword)}>
+                    {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                  </button>
+                </div>
+              </div>
+              <button type="submit" className="primary-button" disabled={isLoading || isGoogleLoading}>
+                {isLoading ? 'Signing in…' : 'Sign in'} <ArrowRight size={17} aria-hidden="true" />
+              </button>
+            </form>
           </div>
-
-          <div className="flex flex-col gap-2">
-            <label htmlFor="password" className="font-mono text-xs text-muted-steel uppercase tracking-widest">Password</label>
-            <input
-              id="password"
-              type="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-surface-container border border-outline focus:border-electric-cyan rounded-lg py-2.5 px-4 text-pure-ink placeholder-muted-steel focus:outline-none focus:ring-1 focus:ring-electric-cyan transition-all text-base sm:text-sm"
-              placeholder="••••••••"
-              required
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={isLoading || isGoogleLoading}
-            className="w-full mt-2 bg-electric-cyan hover:bg-cyan-400 text-abyssal-bg font-bold py-3 rounded-lg transition-all active:-translate-y-px disabled:opacity-50"
-          >
-            {isLoading ? 'Authenticating...' : 'Enter System'}
-          </button>
-        </form>
+        </section>
       </div>
     </main>
   );

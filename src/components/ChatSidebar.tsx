@@ -9,6 +9,7 @@ import { PrismAsync as Prism } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { Mermaid } from './Mermaid';
 import { convertWikilinks, isWikilink, wikilinkTarget, CopyButton, codeBlockInfo } from './MarkdownRenderer';
+import { useDrawerFocus } from '@/lib/useDrawerFocus';
 import { useAuth } from '@/context/AuthContext';
 import { authFetch, authFetchJson } from '@/lib/authFetch';
 import { readJson, writeStorage } from '@/lib/storage';
@@ -62,6 +63,7 @@ function trimSessions(sessions: ChatSession[]): ChatSession[] {
 }
 
 export const ChatSidebar: React.FC<ChatSidebarProps> = ({ onNodeClick, setIsChatVisible, activeNoteSlug, isOverlay = false }) => {
+  const drawerRef = useDrawerFocus<HTMLDivElement>(isOverlay);
   const { user } = useAuth();
   const [isSyncing, setIsSyncing] = useState(false);
   const [activeTab, setActiveTab] = useState<'chat' | 'context'>('chat');
@@ -259,51 +261,49 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ onNodeClick, setIsChat
     return () => { cancelled = true; };
   }, [activeTab, activeNoteSlug]);
 
-  const firstName = (user?.displayName?.split(' ')[0] || 'Operator').toUpperCase();
-
   return (
-    <div className="h-full flex flex-col bg-[#001E3C]/40 backdrop-blur-md text-gray-200 w-full border-l border-[#00F0FF]/30 shadow-[-10px_0_30px_rgba(0,240,255,0.05)] relative z-10 pt-[env(safe-area-inset-top)]">
+    <div ref={drawerRef} className="h-full flex flex-col bg-panel backdrop-blur-md text-paper w-full border-l border-rule  relative z-10 pt-[env(safe-area-inset-top)]">
 
       {/* Top Header Controls (Tabs) */}
-      <div className="h-14 flex items-center justify-between gap-2 px-3 sm:px-4 shrink-0 relative z-20 border-b border-[#00F0FF]/20">
-        <div className="flex bg-[#00F0FF]/10 rounded border border-[#00F0FF]/20 p-0.5 overflow-hidden" role="tablist">
+      <div className="h-16 flex items-center justify-between gap-2 px-3 sm:px-4 shrink-0 relative z-20 border-b border-rule">
+        <div className="flex bg-inset rounded-md border border-rule p-0.5 overflow-hidden" role="tablist">
           <button
             role="tab"
             aria-selected={activeTab === 'chat'}
             onClick={() => setActiveTab('chat')}
-            className={`px-2 min-[360px]:px-3 py-1.5 text-[10px] font-mono tracking-wider min-[360px]:tracking-widest uppercase transition-colors rounded-sm flex items-center gap-1 ${activeTab === 'chat' ? 'bg-[#00F0FF] text-[#02050C] font-bold shadow-[0_0_10px_rgba(0,240,255,0.4)]' : 'text-[#00F0FF]/60 hover:text-[#00F0FF] hover:bg-[#00F0FF]/10'}`}
+            className={`px-2.5 py-2 text-xs font-medium transition-colors rounded-sm flex items-center gap-1 ${activeTab === 'chat' ? 'bg-raised text-paper' : 'text-muted hover:text-brass hover:bg-brass/10'}`}
           >
-            <Aperture size={10} className={activeTab === 'chat' ? 'text-[#02050C] animate-[spin_4s_linear_infinite]' : ''} />
-            E.D.I.T.H.
+            <Aperture size={13} />
+            Chat
           </button>
           <button
             role="tab"
             aria-selected={activeTab === 'context'}
             onClick={() => setActiveTab('context')}
-            className={`px-2 min-[360px]:px-3 py-1.5 text-[10px] font-mono tracking-wider min-[360px]:tracking-widest uppercase transition-colors rounded-sm flex items-center gap-1 ${activeTab === 'context' ? 'bg-[#00F0FF] text-[#02050C] font-bold shadow-[0_0_10px_rgba(0,240,255,0.4)]' : 'text-[#00F0FF]/60 hover:text-[#00F0FF] hover:bg-[#00F0FF]/10'}`}
+            className={`px-2.5 py-2 text-xs font-medium transition-colors rounded-sm flex items-center gap-1 ${activeTab === 'context' ? 'bg-raised text-paper' : 'text-muted hover:text-brass hover:bg-brass/10'}`}
           >
-            <Network size={10} className={activeTab === 'context' ? 'text-[#02050C]' : ''} />
-            Context
+            <Network size={13} />
+            Related
           </button>
         </div>
 
         {/* Action Icons */}
         <div className="flex items-center gap-1 shrink-0 relative" ref={historyRef}>
           {user && (
-            <div className="mr-1 sm:mr-2 hidden min-[360px]:flex items-center text-[9px] font-mono tracking-widest text-[#00F0FF]/40 uppercase" aria-live="polite">
+            <div className="mr-1 sm:mr-2 hidden min-[400px]:flex items-center text-xs text-muted" aria-live="polite">
               {isSyncing ? (
-                <span className="flex items-center gap-1 animate-pulse text-[#00F0FF]"><Cloud size={10} /> Sync</span>
+                <span className="flex items-center gap-1 animate-pulse text-brass"><Cloud size={10} /> Sync</span>
               ) : (
                 <span className="flex items-center gap-1"><Cloud size={10} /> Saved</span>
               )}
             </div>
           )}
-          <button onClick={createNewChat} className="p-2 hover:bg-[#00F0FF]/10 rounded transition-colors text-[#00F0FF]/60 hover:text-[#00F0FF] border border-transparent hover:border-[#00F0FF]/30" title="New Chat" aria-label="New chat">
+          <button onClick={createNewChat} className="p-2 hover:bg-brass/10 rounded transition-colors text-muted hover:text-brass border border-transparent hover:border-rule" title="New Chat" aria-label="New chat">
             <Plus size={16} />
           </button>
           <button
             onClick={() => setIsHistoryOpen(!isHistoryOpen)}
-            className={`p-2 hover:bg-[#00F0FF]/10 rounded transition-colors border border-transparent hover:border-[#00F0FF]/30 ${isHistoryOpen ? 'bg-[#00F0FF]/10 text-[#00F0FF]' : 'text-[#00F0FF]/60 hover:text-[#00F0FF]'}`}
+            className={`p-2 hover:bg-brass/10 rounded transition-colors border border-transparent hover:border-rule ${isHistoryOpen ? 'bg-brass/10 text-brass' : 'text-muted hover:text-brass'}`}
             title="Chat History"
             aria-label="Chat history"
             aria-expanded={isHistoryOpen}
@@ -311,14 +311,14 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ onNodeClick, setIsChat
             <History size={16} />
           </button>
           {isOverlay && (
-            <button onClick={() => setIsChatVisible(false)} className="p-2 hover:bg-[#00F0FF]/10 rounded transition-colors text-[#00F0FF]/60 hover:text-[#00F0FF]" aria-label="Close assistant">
+            <button onClick={() => setIsChatVisible(false)} className="p-2 hover:bg-brass/10 rounded transition-colors text-muted hover:text-brass" aria-label="Close assistant">
               <X size={16} />
             </button>
           )}
 
           {isHistoryOpen && (
-            <div className="absolute top-11 right-0 w-[min(18rem,calc(100vw-1.5rem))] max-h-[60dvh] overflow-y-auto overscroll-contain bg-[#02050C] border border-[#00F0FF]/30 rounded shadow-[0_4px_20px_rgba(0,240,255,0.15)] z-50 flex flex-col custom-scrollbar">
-              <div className="p-3 border-b border-[#00F0FF]/20 text-[10px] font-mono text-[#00F0FF]/60 tracking-widest uppercase flex justify-between items-center sticky top-0 bg-[#02050C] z-10">
+            <div className="absolute top-11 right-0 w-[min(18rem,calc(100vw-1.5rem))] max-h-[60dvh] overflow-y-auto overscroll-contain bg-background border border-rule rounded  z-50 flex flex-col custom-scrollbar">
+              <div className="p-3 border-b border-rule text-[10px] font-mono text-muted tracking-widest uppercase flex justify-between items-center sticky top-0 bg-background z-10">
                 <span>Chat History</span>
                 <button
                   onClick={handleClearAllHistory}
@@ -332,7 +332,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ onNodeClick, setIsChat
               {sessions.map(s => (
                 <div
                   key={s.id}
-                  className={`group text-[12px] hover:bg-[#00F0FF]/10 border-b border-[#00F0FF]/5 transition-colors flex items-center ${activeSessionId === s.id ? 'text-[#00F0FF] bg-[#00F0FF]/5 font-bold' : 'text-gray-300'}`}
+                  className={`group text-[12px] hover:bg-brass/10 border-b border-brass/5 transition-colors flex items-center ${activeSessionId === s.id ? 'text-brass bg-brass/5 font-bold' : 'text-gray-300'}`}
                 >
                   <button
                     onClick={() => { selectSession(s.id); setError(null); setIsHistoryOpen(false); }}
@@ -361,14 +361,10 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ onNodeClick, setIsChat
           <div className="flex-1 overflow-y-auto overscroll-contain px-3 sm:px-4 py-4 flex flex-col gap-6 custom-scrollbar relative" aria-live="polite">
 
             {messages.length === 0 && (
-              <div className="flex flex-col mt-2 px-1">
-                <h1 className="text-[22px] sm:text-[24px] font-tech font-bold leading-tight tracking-widest uppercase shrink-0">
-                  <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#00F0FF] to-white">HELLO, {firstName}.</span>
-                  <br />
-                  <span className="text-[#00F0FF]/70 text-lg font-normal">I AM E.D.I.T.H.</span>
-                  <br />
-                  <span className="text-[11px] font-mono tracking-widest text-[#00F0FF]/50 mt-1 block">AWAITING YOUR DIRECTIVE.</span>
-                </h1>
+              <div className="mt-5 px-2">
+                <Aperture className="mb-4 text-brass" size={28} strokeWidth={1.35} />
+                <h2 className="display-title text-3xl tracking-tight">Research assistant</h2>
+                <p className="mt-2 text-sm leading-relaxed text-muted">Ask E.D.I.T.H. a question about a topic in your notes.</p>
               </div>
             )}
 
@@ -376,14 +372,14 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ onNodeClick, setIsChat
               <div key={m.id} id={`msg-${m.id}`} className="flex gap-4">
                 {m.role === 'user' ? (
                   <div className="w-full flex justify-end">
-                    <div className="bg-[#00F0FF]/10 text-white border border-[#00F0FF]/40 rounded-md px-4 sm:px-5 py-3 max-w-[85%] text-[15px] leading-relaxed shadow-[0_0_10px_rgba(0,240,255,0.1)] whitespace-pre-wrap break-words">
+                    <div className="bg-brass/10 text-white border border-brass/40 rounded-md px-4 sm:px-5 py-3 max-w-[85%] text-[15px] leading-relaxed  whitespace-pre-wrap break-words">
                       {m.content}
                     </div>
                   </div>
                 ) : (
                   <div className="w-full flex gap-3 min-w-0">
-                    <div className="w-8 h-8 rounded-sm bg-[#00F0FF]/20 border border-[#00F0FF]/50 hidden min-[380px]:flex items-center justify-center shrink-0 mt-1 shadow-[0_0_10px_rgba(0,240,255,0.2)]">
-                      <Aperture size={16} className="text-[#00F0FF]" />
+                    <div className="w-8 h-8 rounded-sm bg-brass/20 border border-brass/50 hidden min-[380px]:flex items-center justify-center shrink-0 mt-1">
+                      <Aperture size={16} className="text-brass" />
                     </div>
                     <div className="flex-1 min-w-0 text-white/90 text-[15px] leading-relaxed break-words [&_p]:mb-3 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:mb-1 [&_table]:block [&_table]:overflow-x-auto [&_h1]:text-lg [&_h1]:font-bold [&_h2]:text-base [&_h2]:font-bold [&_h3]:font-semibold">
                       <ReactMarkdown
@@ -395,7 +391,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ onNodeClick, setIsChat
 
                             if (!isBlock) {
                               return (
-                                <code className="bg-[#00F0FF]/10 border border-[#00F0FF]/30 rounded px-1.5 py-0.5 text-[#00F0FF] font-mono text-xs break-words" {...props}>
+                                <code className="bg-brass/10 border border-rule rounded px-1.5 py-0.5 text-brass font-mono text-xs break-words" {...props}>
                                   {children}
                                 </code>
                               );
@@ -410,7 +406,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ onNodeClick, setIsChat
                                 <div className="absolute right-2 top-2 z-10 opacity-0 group-hover:opacity-100 focus-within:opacity-100 touch-visible transition-opacity">
                                   <CopyButton
                                     text={codeString}
-                                    className="bg-[#02050C] hover:bg-[#00F0FF] text-[#00F0FF] hover:text-[#02050C] border border-[#00F0FF]/50 rounded px-2 py-1 text-[10px] font-tech transition-colors shadow-sm"
+                                    className="bg-background hover:bg-brass text-brass hover:text-background border border-brass/50 rounded px-2 py-1 text-[10px] font-sans transition-colors shadow-sm"
                                   />
                                 </div>
                                 <Prism
@@ -419,8 +415,8 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ onNodeClick, setIsChat
                                   customStyle={{
                                     margin: 0,
                                     borderRadius: '0.5rem',
-                                    border: '1px solid rgba(0, 240, 255, 0.3)',
-                                    backgroundColor: '#02050C',
+                                    border: '1px solid var(--background-modifier-border)',
+                                    backgroundColor: 'var(--background)',
                                     fontSize: '0.75rem',
                                     fontFamily: 'var(--font-mono)'
                                   }}
@@ -437,13 +433,13 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ onNodeClick, setIsChat
                                 <button
                                   type="button"
                                   onClick={() => slug && onNodeClick(slug)}
-                                  className="text-[#02050C] hover:bg-white bg-[#00F0FF] px-1.5 py-0.5 rounded-sm transition-colors inline-flex items-center font-bold text-[11px] tracking-widest uppercase mx-1 my-0.5 text-left"
+                                  className="text-background hover:bg-white bg-brass px-1.5 py-0.5 rounded-sm transition-colors inline-flex items-center font-bold text-[11px] tracking-widest uppercase mx-1 my-0.5 text-left"
                                 >
                                   [{children}]
                                 </button>
                               );
                             }
-                            return <a href={href} target="_blank" rel="noopener noreferrer" className="text-[#00F0FF] hover:underline underline-offset-4 break-all">{children}</a>;
+                            return <a href={href} target="_blank" rel="noopener noreferrer" className="text-brass hover:underline underline-offset-4 break-all">{children}</a>;
                           }
                         }}
                       >
@@ -464,10 +460,10 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ onNodeClick, setIsChat
 
             {isLoading && (
               <div className="flex gap-3" role="status">
-                <div className="w-8 h-8 rounded-sm bg-[#00F0FF]/20 border border-[#00F0FF]/50 flex items-center justify-center shrink-0 animate-pulse">
-                  <Aperture size={16} className="text-[#00F0FF]" />
+                <div className="w-8 h-8 rounded-sm bg-brass/20 border border-brass/50 flex items-center justify-center shrink-0 animate-pulse">
+                  <Aperture size={16} className="text-brass" />
                 </div>
-                <div className="flex items-center text-[#00F0FF]/60 text-xs font-mono uppercase tracking-widest">
+                <div className="flex items-center text-muted text-xs font-mono uppercase tracking-widest">
                   <Loader2 size={16} className="animate-spin mr-2" /> Processing...
                 </div>
               </div>
@@ -477,7 +473,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ onNodeClick, setIsChat
 
           {/* Chat Input */}
           <div className="px-3 sm:px-4 pt-2 pb-[max(1rem,env(safe-area-inset-bottom))] bg-transparent shrink-0">
-            <form onSubmit={handleSubmit} className="relative flex items-end bg-[#02050C]/80 border border-[#00F0FF]/30 rounded-sm py-1 px-2 pr-2 transition-all focus-within:border-[#00F0FF] focus-within:shadow-[0_0_15px_rgba(0,240,255,0.15)]">
+            <form onSubmit={handleSubmit} className="relative flex items-end bg-background/80 border border-rule rounded-xl py-2 px-2 pr-2 transition-all focus-within:border-brass">
               <textarea
                 ref={textareaRef}
                 value={input}
@@ -494,57 +490,57 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ onNodeClick, setIsChat
                   }
                 }}
                 disabled={isLoading}
-                placeholder="AWAITING DIRECTIVE..."
+                placeholder="Ask about your notes…"
                 aria-label="Message E.D.I.T.H."
                 rows={1}
                 maxLength={4000}
                 enterKeyHint="send"
                 // 16px on phones stops iOS Safari zooming in on focus.
-                className="w-full bg-transparent border-none py-1.5 px-2 text-base md:text-[12px] text-[#00F0FF] placeholder:text-[#00F0FF]/30 focus:outline-none resize-none max-h-[200px] custom-scrollbar font-mono md:uppercase tracking-wide leading-relaxed"
+                className="w-full bg-transparent border-none py-1.5 px-2 text-base md:text-sm text-paper placeholder:text-muted focus:outline-none resize-none max-h-[200px] custom-scrollbar leading-relaxed"
                 style={{ minHeight: '32px' }}
               />
 
               <button
                 type="submit"
                 disabled={isLoading || !input.trim()}
-                className="shrink-0 p-2 mb-0.5 rounded-sm text-[#00F0FF]/60 hover:text-[#02050C] hover:bg-[#00F0FF] disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-[#00F0FF]/60 transition-all ml-1"
+                className="shrink-0 p-2 mb-0.5 rounded-sm text-muted hover:text-background hover:bg-brass disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-muted transition-all ml-1"
                 aria-label="Send message"
               >
                 <Send size={14} />
               </button>
             </form>
-            <div className="text-center mt-2 text-[9px] text-[#00F0FF]/40 font-mono tracking-wider uppercase leading-tight">
-              E.D.I.T.H. MAY DISPLAY INACCURATE INFO, DOUBLE-CHECK RESPONSES.
+            <div className="text-center mt-2 text-xs text-muted leading-tight">
+              Check important details against your notes.
             </div>
           </div>
         </>
       ) : (
         <div className="flex-1 overflow-y-auto overscroll-contain px-3 sm:px-4 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] flex flex-col gap-2 custom-scrollbar relative">
           <div className="mb-4">
-            <h2 className="font-tech text-[10px] text-[#00F0FF]/60 tracking-widest uppercase">SMART CONNECTIONS</h2>
-            <p className="text-[12px] text-gray-400 mt-1">Files most semantically related to this note.</p>
+            <h2 className="display-title text-2xl text-paper">Related notes</h2>
+            <p className="text-[12px] text-gray-400 mt-1">Notes that discuss similar ideas.</p>
           </div>
 
           {!activeNoteSlug ? (
-            <div className="text-center text-[#00F0FF]/40 text-[11px] font-mono tracking-widest mt-10">OPEN A NOTE TO VIEW SMART CONTEXT.</div>
+            <div className="text-center text-muted text-sm mt-10">Open a note to see its connections.</div>
           ) : similarState === 'loading' ? (
-            <div className="flex flex-col items-center justify-center h-40 gap-3 text-[#00F0FF]/60" role="status">
+            <div className="flex flex-col items-center justify-center h-40 gap-3 text-muted" role="status">
               <Loader2 size={20} className="animate-spin" />
-              <span className="font-mono text-[10px] tracking-widest">ANALYZING VECTORS...</span>
+              <span className="text-sm">Finding related notes…</span>
             </div>
           ) : similarState === 'error' ? (
-            <div className="text-center text-red-300/80 text-[11px] font-mono tracking-widest mt-10" role="alert">COULD NOT LOAD RELATED NOTES.</div>
+            <div className="text-center text-red-300/80 text-sm mt-10" role="alert">Couldn’t load related notes.</div>
           ) : similarNotes.length > 0 ? (
             <div className="flex flex-col gap-2">
               {similarNotes.map((note, index) => (
                 <button
                   key={`${note.uniqueId}-${index}`}
                   onClick={() => onNodeClick(note.key)}
-                  className="group flex items-center justify-between gap-2 text-left p-2.5 rounded-md border border-[#00F0FF]/10 bg-[#001E3C]/30 hover:bg-[#00F0FF]/10 hover:border-[#00F0FF]/30 transition-all shadow-[0_0_10px_rgba(0,240,255,0)] hover:shadow-[0_0_15px_rgba(0,240,255,0.1)]"
+                  className="group flex items-center justify-between gap-2 text-left p-2.5 rounded-md border border-brass/10 bg-panel/30 hover:bg-brass/10 hover:border-rule transition-all "
                 >
                   <div className="flex flex-col overflow-hidden min-w-0">
                     <div className="flex items-center gap-3 min-w-0">
-                      <ChevronRight size={14} className="text-[#00F0FF]/50 group-hover:text-[#00F0FF] transition-colors shrink-0" />
+                      <ChevronRight size={14} className="text-muted group-hover:text-brass transition-colors shrink-0" />
                       <span className="truncate text-[13px] text-gray-200 group-hover:text-white transition-colors">
                         {note.key.split('/').pop()?.replace(/_/g, ' ')}
                       </span>
@@ -555,14 +551,14 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ onNodeClick, setIsChat
                       </span>
                     )}
                   </div>
-                  <div className="shrink-0 bg-[#00F0FF]/10 border border-[#00F0FF]/20 text-[#00F0FF] font-mono text-[10px] px-1.5 py-0.5 rounded shadow-[0_0_5px_rgba(0,240,255,0.2)] group-hover:bg-[#00F0FF] group-hover:text-[#02050C] transition-colors font-bold">
+                  <div className="shrink-0 bg-brass/10 border border-rule text-brass font-mono text-[10px] px-1.5 py-0.5 rounded  group-hover:bg-brass group-hover:text-background transition-colors font-bold">
                     {note.score.toFixed(2)}
                   </div>
                 </button>
               ))}
             </div>
           ) : (
-            <div className="text-center text-[#00F0FF]/40 text-[11px] font-mono tracking-widest mt-10">NO SIMILAR VECTORS FOUND.</div>
+            <div className="text-center text-muted text-sm mt-10">No related notes found.</div>
           )}
         </div>
       )}

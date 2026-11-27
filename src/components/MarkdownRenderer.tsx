@@ -57,7 +57,7 @@ export function convertWikilinks(text: string): string {
     .replace(/\[\[([^\]|]+)\|([^\]]+)\]\]/g, (_match, target: string, alias: string) => `[${alias}](${wikilinkHref(target)})`)
     // [[Note]] -> [Note](#wikilink:Note); [[Note#Heading]] shows as "Note > Heading"
     .replace(/\[\[([^\]]+)\]\]/g, (_match, target: string) =>
-      `[${target.replace(/^#/, '').replace('#', ' > ')}](${wikilinkHref(target)})`);
+      `[${target.replace(/^#/, '').replace('#',' > ')}](${wikilinkHref(target)})`);
 }
 
 export const isWikilink = (href?: string): href is string => !!href?.startsWith(WIKILINK_PREFIX);
@@ -188,10 +188,10 @@ function heading(Tag: 'h1' | 'h2' | 'h3' | 'h4', className: string) {
   };
 }
 
-const H1 = heading('h1', 'text-2xl font-bold text-on-surface mt-6 mb-4 first:mt-0 pb-2 border-b border-whisper-border');
-const H2 = heading('h2', 'text-xl font-semibold text-on-surface mt-6 mb-3');
-const H3 = heading('h3', 'text-lg font-semibold text-on-surface mt-5 mb-2');
-const H4 = heading('h4', 'text-base font-semibold text-on-surface mt-4 mb-2');
+const H1 = heading('h1', 'font-display text-4xl tracking-tight text-paper mt-6 mb-6 first:mt-0');
+const H2 = heading('h2', 'font-display text-3xl tracking-tight text-paper mt-9 mb-3');
+const H3 = heading('h3', 'text-lg font-semibold text-paper mt-5 mb-2');
+const H4 = heading('h4', 'text-base font-semibold text-paper mt-4 mb-2');
 
 export function CopyButton({ text, className = '' }: { text: string; className?: string }) {
   const [copied, setCopied] = React.useState(false);
@@ -244,13 +244,13 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = React.memo(func
         h3: H3,
         h4: H4,
         p: ({ children }) => (
-          <p className="text-base text-on-surface leading-relaxed mb-4">{children}</p>
+          <p className="text-base text-paper/90 leading-[1.8] mb-4">{children}</p>
         ),
         ul: ({ children }) => (
-          <ul className="list-disc pl-6 space-y-2 mb-4 text-base text-on-surface marker:text-on-surface-variant">{children}</ul>
+          <ul className="list-disc pl-6 space-y-2 mb-4 text-base text-paper marker:text-muted">{children}</ul>
         ),
         ol: ({ children }) => (
-          <ol className="list-decimal pl-6 space-y-2 mb-4 text-base text-on-surface marker:text-on-surface-variant">{children}</ol>
+          <ol className="list-decimal pl-6 space-y-2 mb-4 text-base text-paper marker:text-muted">{children}</ol>
         ),
         li: ({ children }) => <li className="leading-relaxed">{children}</li>,
         a: ({ href, children }) => {
@@ -263,7 +263,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = React.memo(func
                   e.preventDefault();
                   scrollToAnchor(href);
                 }}
-                className="text-electric-cyan hover:underline"
+                className="text-brass hover:underline"
               >
                 {children}
               </a>
@@ -278,7 +278,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = React.memo(func
                   e.preventDefault();
                   if (onNodeClick && slug) onNodeClick(slug);
                 }}
-                className="text-electric-cyan hover:bg-electric-cyan/10 px-1 py-0.5 rounded transition-colors inline-flex items-center text-left font-medium border border-electric-cyan/20 cursor-pointer"
+                className="text-brass hover:bg-brass/10 px-1 py-0.5 rounded transition-colors inline-flex items-center text-left font-medium border border-brass/20 cursor-pointer"
               >
                 {children}
               </button>
@@ -289,7 +289,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = React.memo(func
               href={href}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-electric-cyan hover:underline"
+              className="text-brass hover:underline"
             >
               {children}
             </a>
@@ -300,7 +300,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = React.memo(func
 
           if (!isBlock) {
             return (
-              <code className="bg-surface-container border border-whisper-border rounded px-1.5 py-0.5 text-electric-cyan font-mono text-xs" {...props}>
+              <code className="bg-inset border border-rule rounded px-1.5 py-0.5 text-brass font-mono text-xs" {...props}>
                 {children}
               </code>
             );
@@ -315,7 +315,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = React.memo(func
               <div className="absolute right-2 top-2 z-10 opacity-0 group-hover:opacity-100 focus-within:opacity-100 touch-visible transition-opacity">
                 <CopyButton
                   text={codeString}
-                  className="bg-surface-container-high hover:bg-electric-cyan hover:text-abyssal-bg text-muted-steel border border-whisper-border rounded px-2 py-1 text-[10px] font-tech transition-colors shadow-sm"
+                  className="bg-raised hover:bg-brass hover:text-background text-muted border border-rule rounded px-2 py-1 text-[10px] font-sans transition-colors shadow-sm"
                 />
               </div>
               <Prism
@@ -324,8 +324,8 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = React.memo(func
                 customStyle={{
                   margin: 0,
                   borderRadius: '0.5rem',
-                  border: '1px solid var(--color-whisper-border)',
-                  backgroundColor: 'var(--color-surface-container)',
+                  border: '1px solid var(--color-rule)',
+                  backgroundColor: 'var(--color-inset)',
                   fontSize: '0.75rem',
                   fontFamily: 'var(--font-mono)'
                 }}
@@ -339,18 +339,18 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = React.memo(func
           <pre className="mb-3">{children}</pre>
         ),
         blockquote: ({ children }) => (
-          <blockquote className="border-l-2 border-electric-cyan/50 pl-4 my-3 text-sm text-muted-steel italic">
+          <blockquote className="border-l-2 border-brass/50 pl-4 my-3 text-sm text-muted italic">
             {children}
           </blockquote>
         ),
-        hr: () => <hr className="border-whisper-border my-4" />,
+        hr: () => <hr className="border-rule my-4" />,
         img: ({ src, alt, title, width, height }) => {
           if (typeof src !== 'string' || !src) return null;
           // Obsidian renders ![](youtube link) as a player; use the no-cookie embed.
           const videoId = youtubeId(src);
           if (videoId) {
             return (
-              <span className="block my-4 w-full max-w-2xl aspect-video overflow-hidden rounded-lg border border-whisper-border bg-black">
+              <span className="block my-4 w-full max-w-2xl aspect-video overflow-hidden rounded-lg border border-rule bg-black">
                 <iframe
                   src={`https://www.youtube-nocookie.com/embed/${videoId}`}
                   title={alt || 'YouTube video'}
@@ -375,15 +375,15 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = React.memo(func
               loading="lazy"
               decoding="async"
               referrerPolicy="no-referrer"
-              className="max-w-full h-auto rounded-md border border-whisper-border my-2 inline-block"
+              className="max-w-full h-auto rounded-md border border-rule my-2 inline-block"
             />
           );
         },
         strong: ({ children }) => (
-          <strong className="font-semibold text-on-surface">{children}</strong>
+          <strong className="font-semibold text-paper">{children}</strong>
         ),
         em: ({ children }) => (
-          <em className="italic text-muted-steel">{children}</em>
+          <em className="italic text-muted">{children}</em>
         ),
         table: ({ children }) => (
           <div className="overflow-x-auto mb-3">
@@ -391,12 +391,12 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = React.memo(func
           </div>
         ),
         th: ({ children }) => (
-          <th className="text-left p-2 border border-whisper-border font-mono text-muted-steel bg-surface-container">
+          <th className="text-left p-2 border border-rule font-mono text-muted bg-inset">
             {children}
           </th>
         ),
         td: ({ children }) => (
-          <td className="p-2 border border-whisper-border text-on-surface-variant">{children}</td>
+          <td className="p-2 border border-rule text-muted">{children}</td>
         ),
       }}
     >

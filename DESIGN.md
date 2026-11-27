@@ -1,50 +1,23 @@
-# Design System: Molecular Zettelkasten
+# Molecular Zettelkasten
 
-## 1. Visual Theme & Atmosphere
-A highly focused, technical dark-mode environment ("Cockpit Dense" meets "Art Gallery Airy"). The interface relies on deep, absolute neutral backgrounds (Zinc/Charcoal) contrasted by a singular, vibrant accent. It features glassmorphic overlay panels that float above the 3D knowledge graph. The motion is fluid and physics-based, communicating precision and speed.
+Molecular Zettelkasten is a private workspace for reading an Obsidian vault, finding notes by meaning, and asking E.D.I.T.H. questions grounded in the vault.
 
-## 2. Color Palette & Roles
-- **Abyssal Background** (`#09090B`) — Primary background surface (Zinc-950).
-- **Glass Surface** (`rgba(24, 24, 27, 0.6)`) — Translucent card and container fill for glassmorphic panels.
-- **Pure Ink text** (`#FAFAFA`) — Primary text, high-contrast headings.
-- **Muted Steel text** (`#A1A1AA`) — Secondary text, descriptions, metadata (Zinc-400).
-- **Whisper Border** (`rgba(255,255,255,0.1)`) — Card borders, 1px structural lines for glass panels.
-- **Electric Cyan Accent** (`#06B6D4`) — Single accent for CTAs, active states, focus rings, and highlighted graph nodes.
+## Identity
 
-*(Max 1 accent. No purple/neon gradients. No pure black `#000000`.)*
+Use the Molecular Zettelkasten name and atom mark at entry and in the file browser. A brass molecular study introduces the vault on sign-in and on its overview. The artwork is decorative. Note bodies, search results, and conversations use plain surfaces.
 
-## 3. Typography Rules
-- **Display:** `Geist` — Track-tight, controlled scale, weight-driven hierarchy. Used for primary UI headings.
-- **Body:** `Geist` — Relaxed leading, 65ch max-width, neutral secondary color.
-- **Mono:** `Geist Mono` — For tags, metadata, file paths, and high-density metrics.
-- **Banned:** `Inter`, `Times New Roman`, generic system fonts, and all serif fonts in the dashboard UI.
+## Surfaces and type
 
-## 4. Component Stylings
-* **Buttons:** Flat, tactile -1px translate on active state. Cyan fill for primary buttons, ghost/outline with whisper borders for secondary. No outer glows.
-* **Cards (Glass Panels):** Heavy backdrop-blur (`backdrop-blur-md`), rounded corners (`1rem`). Diffused drop shadows. Used as floating panels over the 3D graph canvas.
-* **Inputs/Search:** Label above, minimal border, focus ring in Electric Cyan. No floating labels. Left-aligned search icons.
-* **Loaders:** Skeletal shimmer matching exact layout dimensions. No circular spinners.
-* **Empty States:** Composed, illustrated structural compositions — not just "No data" text.
+- Ink `#141513` is the reading background. Graphite `#1b1c19` distinguishes the file browser, assistant, and form.
+- Paper `#f2efe7` is the primary text color. Secondary copy uses `#acada3`. Structural rules use `#383934`.
+- Brass `#dfbc84` identifies the primary action, linked notes, focus outlines, and selected items. Errors retain their own semantic color.
+- Use the bundled Baskervville for display titles and the first two heading levels in notes. Use Geist for controls, form labels, and body text. Reserve monospace for paths, code, shortcuts, and numeric metadata.
+- Keep note text within 70 characters per line. Raw files and diagrams may use more space.
 
-## 5. Layout Principles
-- Absolute positioned, full-screen `react-force-graph-3d` canvas acts as the base layer (`z-0`).
-- UI panels float above the canvas (`z-10`) with asymmetric padding.
-- Strict single-column collapse below 768px (floating panels become full-width drawers).
-- Contain overlay layouts using max-width constraints (e.g., sidebars fixed at 320px).
-- No flexbox percentage math. No overlapping UI panels on desktop.
+## Navigation and feedback
 
-## 6. Motion & Interaction
-- Spring physics for all interactive elements (buttons, hover hover states).
-- Staggered cascade reveals when lists of search results mount.
-- Smooth camera panning in the 3D graph.
-- Hardware-accelerated transforms only.
+The overview opens notes from recent history or the actual file tree. Search is available from the overview, file browser, and Ctrl/Cmd+K. The Vault breadcrumb and sidebar wordmark return to the overview. Restore the last open note on a new visit.
 
-## 7. Anti-Patterns (Banned)
-- NEVER DO: Use emojis anywhere in the UI.
-- NEVER DO: Use the `Inter` font.
-- NEVER DO: Use pure black (`#000000`).
-- NEVER DO: Use neon/outer glow shadows or oversaturated purple gradients.
-- NEVER DO: Use 3-column equal card layouts.
-- NEVER DO: Fabricate data or statistics.
-- NEVER DO: Use AI copywriting clichés ("Elevate", "Seamless", "Unleash").
-- NEVER DO: Use filler text ("Scroll to explore").
+Below 768px, navigation opens as a drawer. Below 1280px, the assistant opens as an overlay. On wider screens, both can sit beside the reading column. Respect saved panel preferences. Keep mobile text inputs at 16px or larger.
+
+Use understated hover and focus states. Reserve translucency for overlays. Use sentence case for actions and status messages, and state whether an operation is loading, empty, or unavailable.

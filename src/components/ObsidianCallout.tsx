@@ -130,7 +130,7 @@ export const ObsidianCallout: React.FC<ObsidianCalloutProps> = ({
 
         {/* Title */}
         <span
-          className="text-sm font-semibold tracking-wide uppercase font-tech"
+          className="text-sm font-semibold tracking-wide uppercase font-sans"
           style={{ color: theme.color }}
         >
           {title}
@@ -155,7 +155,7 @@ export const ObsidianCallout: React.FC<ObsidianCalloutProps> = ({
         className={`callout-content ${isCollapsed ? 'callout-collapsed' : ''}`}
       >
         <div>
-          <div className="px-4 pb-3 text-sm text-on-surface/90 leading-relaxed [&>p:last-child]:mb-0">
+          <div className="px-4 pb-3 text-sm text-paper/90 leading-relaxed [&>p:last-child]:mb-0">
             {children}
           </div>
         </div>
