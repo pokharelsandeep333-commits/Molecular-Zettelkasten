@@ -13,9 +13,10 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase ONLY on the client side to prevent Next.js SSR build crashes
-const app = typeof window !== 'undefined' && !getApps().length 
-  ? initializeApp(firebaseConfig) 
-  : typeof window !== 'undefined' ? getApp() : null;
+export const firebaseConfigured = Boolean(firebaseConfig.apiKey && firebaseConfig.projectId);
+const app = typeof window !== 'undefined' && firebaseConfigured
+  ? (getApps().length ? getApp() : initializeApp(firebaseConfig))
+  : null;
   
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const auth = app ? getAuth(app) : null as any;

@@ -14,13 +14,13 @@
     "@huggingface/transformers": "4.3.0",
     "dompurify": "3.4.17",
     "firebase": "^12.16.0",
-    "firebase-admin": "^14.2.0",
+    "firebase-admin": "14.5.1",
     "framer-motion": "^12.42.2",
     "gray-matter": "^4.0.3",
     "katex": "0.16.47",
     "lucide-react": "^1.24.0",
     "mermaid": "11.17.2",
-    "next": "16.4.3",
+    "next": "16.4.6",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-markdown": "^10.1.0",
@@ -43,11 +43,11 @@
     "@types/react-syntax-highlighter": "^15.5.13",
     "@vitejs/plugin-react": "^6.0.3",
     "eslint": "^9",
-    "eslint-config-next": "16.4.3",
+    "eslint-config-next": "16.4.6",
     "jsdom": "^29.1.1",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "vitest": "^4.1.10"
+    "vitest": "4.1.12"
   },
   "overrides": {
     "@firebase/firestore": {

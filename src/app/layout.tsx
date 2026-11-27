@@ -1,25 +1,26 @@
 import type { Metadata, Viewport } from "next";
-import { Outfit, JetBrains_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import { headers } from "next/headers";
 import "./globals.css";
 import "katex/dist/katex.min.css";
 import { AuthProvider } from "@/context/AuthContext";
 
-// Self-hosted at build time by next/font: no render-blocking request to Google.
-const outfit = Outfit({
-  variable: "--font-outfit",
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
+const geist = localFont({
+  src: "./fonts/geist/Geist-Variable.woff2",
+  variable: "--font-geist",
+  weight: "100 900",
 });
 
-const jetbrainsMono = JetBrains_Mono({
-  variable: "--font-jetbrains-mono",
-  subsets: ["latin"],
-  weight: ["400", "500", "700"],
+const baskervville = localFont({
+  src: [
+    { path: "./fonts/baskervville/baskervville-latin-400-normal.woff2", weight: "400", style: "normal" },
+    { path: "./fonts/baskervville/baskervville-latin-400-italic.woff2", weight: "400", style: "italic" },
+  ],
+  variable: "--font-baskervville",
 });
 
 export const metadata: Metadata = {
-  title: "Neural Matrix",
+  title: "Molecular Zettelkasten",
   description: "A secure, specialized personal knowledge base.",
   robots: { index: false, follow: false },
 };
@@ -28,7 +29,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#02050C",
+  themeColor: "#141513",
   colorScheme: "dark",
 };
 
@@ -44,7 +45,7 @@ export default async function RootLayout({
   return (
     <html
       lang="en"
-      className={`${outfit.variable} ${jetbrainsMono.variable} h-full antialiased dark`}
+      className={`${geist.variable} ${baskervville.variable} h-full antialiased dark`}
     >
       <body className="min-h-full flex flex-col">
         <AuthProvider>

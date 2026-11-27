@@ -128,7 +128,7 @@ export const Mermaid: React.FC<MermaidProps> = ({ chart }) => {
     <div 
       className="flex justify-center p-4 min-w-full text-[16px] leading-normal"
       style={{ fontFamily: 'Arial, Helvetica, sans-serif' }}
-      dangerouslySetInnerHTML={{ __html: svgContent || '<div class="text-[#00F0FF]/50 animate-pulse text-xs font-mono tracking-widest">RENDERING...</div>' }}
+      dangerouslySetInnerHTML={{ __html: svgContent || '<div class="text-muted animate-pulse text-xs font-mono tracking-widest">RENDERING...</div>' }}
     />
   );
 
@@ -136,7 +136,7 @@ export const Mermaid: React.FC<MermaidProps> = ({ chart }) => {
     <>
       {/* Inline View */}
       <div className="relative flex justify-center w-full my-6">
-        <div className="relative group w-full bg-[#001E3C]/20 rounded-lg border border-white/5 overflow-x-auto shadow-md custom-scrollbar">
+        <div className="relative group w-full bg-panel/20 rounded-lg border border-white/5 overflow-x-auto shadow-md custom-scrollbar">
           <button 
             onClick={toggleFullscreen}
             className="absolute top-2 right-2 p-1.5 bg-white/10 text-white rounded-md opacity-0 group-hover:opacity-100 focus:opacity-100 touch-visible transition-opacity hover:bg-white hover:text-black shadow-sm z-10"
@@ -156,7 +156,7 @@ export const Mermaid: React.FC<MermaidProps> = ({ chart }) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] bg-[#02050C]/90 backdrop-blur-md flex flex-col items-center justify-center p-3 sm:p-8 overflow-auto custom-scrollbar"
+            className="fixed inset-0 z-[100] bg-background/90 backdrop-blur-md flex flex-col items-center justify-center p-3 sm:p-8 overflow-auto custom-scrollbar"
             onClick={() => setIsFullscreen(false)}
             role="dialog"
             aria-modal="true"
@@ -165,13 +165,13 @@ export const Mermaid: React.FC<MermaidProps> = ({ chart }) => {
             <button 
               onClick={(e) => { e.stopPropagation(); setIsFullscreen(false); }}
               aria-label="Close diagram"
-              className="absolute top-[max(1rem,env(safe-area-inset-top))] right-4 sm:right-6 p-2 bg-[#00F0FF]/10 text-[#00F0FF] rounded-md hover:bg-[#00F0FF] hover:text-[#02050C] transition-colors shadow-[0_0_15px_rgba(0,240,255,0.3)] z-[110]"
+              className="absolute top-[max(1rem,env(safe-area-inset-top))] right-4 sm:right-6 p-2 bg-brass/10 text-brass rounded-md hover:bg-brass hover:text-background transition-colors  z-[110]"
               title="Close Fullscreen (Esc)"
             >
               <Minimize2 size={20} />
             </button>
             <div 
-              className="bg-[#001E3C]/50 rounded-xl border border-[#00F0FF]/30 p-3 sm:p-8 shadow-[0_0_30px_rgba(0,240,255,0.1)] w-full max-w-7xl max-h-[90vh] overflow-auto custom-scrollbar relative"
+              className="bg-panel/50 rounded-xl border border-rule p-3 sm:p-8  w-full max-w-7xl max-h-[90vh] overflow-auto custom-scrollbar relative"
               onClick={(e) => e.stopPropagation()}
             >
               {chartContent}

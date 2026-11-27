@@ -1,71 +1,89 @@
 @import "tailwindcss";
 
 :root {
-  --background: #02050C;
-  --foreground: #ffffff;
-
-  /* Obsidian theme variables that LLM-Wiki SVG figures reference
-     (e.g. fill="var(--background-primary)" for graph nodes). */
-  --background-primary: #02050C;
-  --background-secondary: #041424;
-  --background-modifier-border: rgba(0, 240, 255, 0.2);
-  --text-normal: #E0F7FA;
-  --text-muted: rgba(180, 220, 255, 0.7);
-  --text-accent: #00F0FF;
-  --interactive-accent: #00F0FF;
+  color-scheme: dark;
+  --background: #141513;
+  --foreground: #f2efe7;
+  --background-primary: var(--background);
+  --background-secondary: #1b1c19;
+  --background-modifier-border: #383934;
+  --text-normal: var(--foreground);
+  --text-muted: #acada3;
+  --text-accent: #dfbc84;
+  --interactive-accent: var(--text-accent);
 }
 
 @theme inline {
+  --font-sans: var(--font-geist), system-ui, sans-serif;
+  --font-mono: ui-monospace, Consolas, monospace;
+  --font-display: var(--font-baskervville), Georgia, serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  /* Fonts are self-hosted by next/font in layout.tsx */
-  --font-sans: var(--font-outfit), system-ui, sans-serif;
-  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
-  --font-tech: var(--font-outfit), system-ui, sans-serif;
-
-  /* E.D.I.T.H. Stark Tech Colors */
-  --color-abyssal-bg: rgba(4, 9, 20, 0.6);
-  --color-glass-surface: rgba(0, 30, 60, 0.15);
-  --color-pure-ink: #ffffff;
-  --color-muted-steel: rgba(180, 220, 255, 0.7);
-  --color-whisper-border: rgba(0, 240, 255, 0.2);
-  --color-electric-cyan: #00F0FF;
-  --color-stark-glow: rgba(0, 240, 255, 0.4);
-
-  /* Transparent Surface Colors */
-  --color-surface: rgba(4, 9, 20, 0.4);
-  --color-surface-dim: rgba(2, 5, 12, 0.7);
-  --color-surface-bright: rgba(0, 240, 255, 0.05);
-  --color-surface-container-lowest: rgba(2, 5, 12, 0.85);
-  --color-surface-container-low: rgba(0, 30, 60, 0.2);
-  --color-surface-container: rgba(0, 50, 100, 0.15);
-  --color-surface-container-high: rgba(0, 80, 150, 0.2);
-  --color-surface-container-highest: rgba(0, 240, 255, 0.15);
-  --color-on-surface: #E0F7FA;
-  --color-on-surface-variant: rgba(224, 247, 250, 0.7);
-  --color-outline: rgba(0, 240, 255, 0.3);
-  --color-outline-variant: rgba(0, 240, 255, 0.15);
+  --color-paper: var(--foreground);
+  --color-brass: var(--text-accent);
+  --color-muted: var(--text-muted);
+  --color-rule: var(--background-modifier-border);
+  --color-panel: var(--background-secondary);
+  --color-inset: #22231f;
+  --color-raised: #2b2c27;
 }
 
 body {
-  background: #02050C;
-  color: var(--color-on-surface);
+  background: var(--background);
+  color: var(--foreground);
   font-family: var(--font-sans);
-  @apply antialiased;
 }
-
-/* Glassmorphism Utilities */
-@layer utilities {
-  .glass-panel {
-    @apply bg-glass-surface backdrop-blur-lg border border-whisper-border rounded-xl shadow-[0_0_20px_rgba(0,240,255,0.05)];
-  }
-  .glass-panel-glow {
-    @apply bg-glass-surface backdrop-blur-lg border border-whisper-border rounded-xl shadow-[0_0_20px_rgba(0,240,255,0.05)] hover:border-electric-cyan/60 hover:shadow-[0_0_25px_var(--color-stark-glow)] transition-all duration-300;
-  }
-  .tech-text {
-    @apply font-tech tracking-widest uppercase;
-  }
+button:not(:disabled), a { cursor: pointer; }
+button, input, textarea, a { -webkit-tap-highlight-color: transparent; }
+:focus-visible { outline: 2px solid var(--text-accent); outline-offset: 3px; }
+::selection { background: #dfbc8440; color: var(--foreground); }
+.wordmark { display: inline-flex; align-items: center; gap: .7rem; font-size: .95rem; font-weight: 550; letter-spacing: -.035em; }
+.wordmark > svg { color: var(--text-accent); width: 1.8rem; height: 1.8rem; stroke-width: 1.4; }
+.access-page { width: min(100%, 1680px); margin: 0 auto; min-height: 100svh; display: flex; flex-direction: column; padding: 0 clamp(1rem, 3.2vw, 4rem) clamp(1rem, 3vw, 3rem); }
+.access-header { min-height: clamp(4.5rem, 9vh, 6rem); display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.privacy-label { display: inline-flex; align-items: center; gap: .5rem; color: var(--text-muted); font-size: .78rem; }
+.access-layout { flex: 1; display: grid; grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr); border: 1px solid var(--background-modifier-border); border-radius: 1rem; overflow: hidden; }
+.study-cover { position: relative; isolation: isolate; display: flex; align-items: end; min-height: 38rem; overflow: hidden; background: #131411; border-right: 1px solid var(--background-modifier-border); }
+.cover-image { position: absolute; z-index: -1; inset: 0; background: linear-gradient(to top, #10110ff2 0%, #10110fca 19%, transparent 57%), url('/molecular-study.webp') 58% 20% / auto 80% no-repeat; }
+.cover-copy { padding: clamp(2rem, 4.5vw, 5rem); }
+.cover-copy h1, .access-form-inner h2, .display-title { font-family: var(--font-display); font-weight: 400; }
+.cover-copy h1 { font-size: clamp(3.3rem, 5.6vw, 6.5rem); line-height: .99; letter-spacing: -.061em; }
+.cover-copy em { color: var(--text-accent); }
+.cover-copy p { color: #c1c0b6; max-width: 34ch; font-size: clamp(.9rem, 1.15vw, 1.1rem); line-height: 1.55; margin-top: 1.25rem; }
+.access-form-panel { background: var(--background-secondary); display: grid; place-items: center; padding: clamp(2rem, 5vw, 6rem); }
+.access-form-inner { width: 100%; max-width: 23rem; }
+.access-form-inner h2 { font-size: clamp(2.4rem, 3.3vw, 4rem); line-height: 1.12; letter-spacing: -.055em; }
+.form-intro { margin: .6rem 0 2.1rem; font-size: .94rem; color: var(--text-muted); }
+.google-button, .primary-button { min-height: 3rem; display: inline-flex; align-items: center; justify-content: center; gap: .7rem; width: 100%; border-radius: .5rem; font-size: .9rem; font-weight: 580; transition: background .18s, transform .18s; }
+.google-button { border: 1px solid #51524a; background: #252622; }
+.google-button:hover { background: #30312c; }
+.primary-button { background: var(--text-accent); color: #201c15; margin-top: .25rem; }
+.primary-button:hover { background: #edcb94; }
+.primary-button:active, .google-button:active { transform: translateY(1px); }
+.primary-button:disabled, .google-button:disabled { opacity: .65; }
+.form-divider { display: flex; align-items: center; gap: .85rem; color: var(--text-muted); font-size: .75rem; margin: 1.4rem 0; }
+.form-divider::before, .form-divider::after { content: ''; height: 1px; background: var(--background-modifier-border); flex: 1; }
+.access-form-inner label { display: block; font-weight: 500; margin-bottom: .48rem; font-size: .84rem; }
+.access-form-inner input { border: 1px solid #474840; border-radius: .45rem; height: 3rem; background: #171815; color: var(--foreground); width: 100%; padding: 0 .9rem; }
+.access-form-inner input::placeholder { color: #97998e; }
+.access-form-inner #password { padding-right: 3rem; }
+.password-toggle { display: grid; place-items: center; position: absolute; inset: 2px 2px 2px auto; width: 2.75rem; color: var(--text-muted); border-radius: .4rem; }
+.password-toggle:hover { color: var(--foreground); }
+.form-alert { margin-bottom: 1rem; padding: .7rem .85rem; background: #382723; color: #f5b6a9; border-radius: .4rem; font-size: .875rem; }
+@media (max-width: 767px) {
+  .access-header { min-height: 4rem; padding-top: env(safe-area-inset-top); }
+  .access-layout { display: block; flex: none; }
+  .study-cover { min-height: 9.25rem; border-right: 0; border-bottom: 1px solid var(--background-modifier-border); }
+  .cover-image { background: linear-gradient(90deg, #11120ffa 7%, #11120fbd 50%, transparent 80%), url('/molecular-study.webp') right center / 75% auto no-repeat; }
+  .cover-copy { padding: 1.4rem; }
+  .cover-copy h1 { font-size: 2.45rem; }
+  .cover-copy p { display: none; }
+  .access-form-panel { padding: 1.8rem clamp(1rem, 6vw, 2rem) 2rem; }
+  .access-form-inner h2 { font-size: 2.25rem; }
+  .form-intro { margin-bottom: 1.4rem; }
+  .access-page { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
 }
+@media (max-width: 359px) { .privacy-label { font-size: 0; } }
 
 /* Scrollbars: hidden on touch screens, thin and visible where there is a mouse
    so desktop users can still see and drag them. */
@@ -79,7 +97,7 @@ body {
 @media (pointer: fine) {
   .custom-scrollbar {
     scrollbar-width: thin;
-    scrollbar-color: rgba(0, 240, 255, 0.25) transparent;
+    scrollbar-color: #626359 transparent;
   }
   .custom-scrollbar::-webkit-scrollbar {
     display: block;
@@ -87,15 +105,27 @@ body {
     height: 8px;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(0, 240, 255, 0.2);
+    background: #54554d;
     border-radius: 9999px;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(0, 240, 255, 0.4);
+    background: #77786c;
   }
   .custom-scrollbar::-webkit-scrollbar-track {
     background: transparent;
   }
+}
+.search-dialog { width: min(36rem, calc(100% - 1.5rem)); max-height: min(75dvh, 42rem); margin: max(1rem, 10dvh) auto 0; padding: 0; border: 1px solid var(--background-modifier-border); border-radius: .8rem; background: var(--background-secondary); color: var(--foreground); box-shadow: 0 1.5rem 5rem #0005; overflow: hidden; }
+.search-dialog[open] { display: flex; flex-direction: column; }
+.search-dialog::backdrop { background: #10110fbb; backdrop-filter: blur(5px); }
+
+.vault-cover { padding: clamp(1.5rem, 4vw, 3.75rem); border: 1px solid var(--background-modifier-border); border-radius: .85rem; overflow: hidden; background: linear-gradient(90deg, #171814 12%, #171814ed 34%, #17181428 80%), url('/molecular-study.webp') right 40% / 75% auto no-repeat, #171814; }
+.vault-cover h1 { font-size: clamp(2.85rem, 4.6vw, 5.5rem); line-height: 1.15; letter-spacing: -.065em; }
+.vault-cover p { margin-top: .4rem; color: #c5c5ba; max-width: 26ch; line-height: 1.5; }
+.vault-search { display: inline-flex; align-items: center; gap: .65rem; margin-top: 1.6rem; background: var(--text-accent); color: #211d16; padding: .72rem 1rem; border-radius: .45rem; font-size: .85rem; font-weight: 600; }
+.vault-search:hover { background: #edcb94; }
+@media (max-width: 480px) {
+  .vault-cover { background-image: linear-gradient(90deg, #171814fc 8%, #171814cf 50%, #17181448), url('/molecular-study.webp'); background-size: auto, auto 100%; }
 }
 
 /* Controls revealed on hover must stay visible on touch screens, which have no hover. */

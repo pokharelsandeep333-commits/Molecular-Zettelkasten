@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { User, onIdTokenChanged } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { auth, firebaseConfigured } from '@/lib/firebase';
 import { isAllowedEmail } from '@/lib/allowedEmails';
 import { useRouter, usePathname } from 'next/navigation';
 
@@ -33,7 +33,7 @@ async function syncSessionCookie(user: User | null) {
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(firebaseConfigured);
   const [authError, setAuthError] = useState<string | null>(null);
   const router = useRouter();
   const pathname = usePathname();
@@ -82,8 +82,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   return (
     <AuthContext.Provider value={{ user, loading, authError, logout }}>
       {loading ? (
-        <div className="min-h-dvh bg-[#02050C] flex items-center justify-center" role="status" aria-label="Loading">
-          <div className="w-16 h-16 border-4 border-surface-container border-t-electric-cyan rounded-full animate-spin"></div>
+        <div className="min-h-dvh bg-background flex items-center justify-center" role="status" aria-label="Loading">
+          <span className="display-title text-2xl text-brass animate-pulse">Opening vault…</span>
         </div>
       ) : (
         children

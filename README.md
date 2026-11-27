@@ -1,172 +1,62 @@
-<div align="center">
-  <img src="https://img.shields.io/badge/Status-Online-00F0FF?style=for-the-badge&logo=google" alt="Status" />
-  <img src="https://img.shields.io/badge/Gemini-Interactions_API-02050C?style=for-the-badge&logo=google" alt="Gemini" />
-  <img src="https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=next.js" alt="Next.js" />
-  <img src="https://img.shields.io/badge/Deployment-Self--hosted-F38020?style=for-the-badge&logo=cloudflare" alt="Self-hosted" />
-  <img src="https://img.shields.io/badge/React-19-blue?style=for-the-badge&logo=react" alt="React 19" />
-</div>
+# Molecular Zettelkasten
 
-<br />
+Molecular Zettelkasten is a private web reader for an Obsidian vault. Open a note, follow its `[[wikilinks]]`, or ask E.D.I.T.H. a question and open a cited note beside the answer. The Markdown files stay in the vault. You can keep editing them in Obsidian.
 
-<div align="center">
-  <h1 style="color: #00F0FF; font-family: monospace;">MOLECULAR ZETTELKASTEN</h1>
-  <p><strong>Powered by the Neural Matrix & E.D.I.T.H.</strong></p>
-</div>
+[![Build and test](https://github.com/pokharelsandeep333-commits/Molecular-Zettelkasten/actions/workflows/docker-build.yml/badge.svg?branch=main)](https://github.com/pokharelsandeep333-commits/Molecular-Zettelkasten/actions/workflows/docker-build.yml)
 
-## 🌌 Overview
+![Vault overview with the file browser, search, and three sample research notes](docs/vault-overview.png)
 
-**Molecular Zettelkasten** is a personal knowledge management web app that brings your notes to life. Instead of just organizing static text files in folders, this application connects your personal Obsidian vault directly to an advanced AI assistant named E.D.I.T.H.
+## Finding a note
 
-Think of it as turning your notes into a conversational "second brain." When you ask a question, the AI intelligently reads through your notes to understand the context of your ideas. It can summarize topics, draw connections between different documents, and cite exactly where it found the information. 
+Press **Ctrl+K** or **⌘K** to search. If you remember the idea but forget what you called the note, semantic search compares your query with the Smart Connections index on the server. The search palette falls back to keyword matches across titles, tags, and excerpts. Open a result and the file browser expands to show where it lives.
 
-By giving the AI direct access to your personal knowledge base, it can continuously learn, store, and retrieve information alongside you without losing context. You get to browse your ideas and chat with your vault in real-time, all within a sleek, premium interface.
+Inside a note, the reader renders Obsidian callouts, diagrams, equations, and footnotes. The assistant’s **Related** tab finds other notes with similar content. On a wide screen you can keep the file browser, note, and assistant open together. On a phone, the panels open over the reader.
 
-## ✨ Core Features
+## Where a question goes
 
-*   **E.D.I.T.H. AI Assistant:** Powered by `@google/genai` and the state-of-the-art **Gemini Interactions API** (`gemini-3.6-flash`). E.D.I.T.H. features an optimized, token-saving custom memory system that restricts context bloat on long conversations.
-*   **Semantic RAG (Neural Matrix):** Seamlessly connects to your Obsidian Vault. E.D.I.T.H. uses **HyDE (Hypothetical Document Embeddings)** via `gemini-3.5-flash-lite` to run background vector searches against your notes, citing sources directly in her responses.
-*   **Stark-Tech UI/UX:** A bespoke, hardware-accelerated interface featuring responsive glassmorphic sidebars, `Geist` typography, and a signature cyan (`#00F0FF`) glowing aesthetic powered by Framer Motion.
-*   **Firebase Integration:** Secure Firebase Authentication ensures only authorized access. Firestore is used to persistently sync chat sessions across devices.
-*   **Full-Text Markdown Rendering:** Native rendering of Obsidian-flavored markdown, including clickable wikilinks (`[[Note Name]]`), Mermaid diagrams, and code syntax highlighting.
+When you ask a short question, E.D.I.T.H. asks Gemini for search terms first. The server embeds the query locally with `TaylorAI/bge-micro-v2` in 8-bit precision, the same model and precision used to index the vault. It ranks the matches and reads up to three notes.
 
-## 🚀 Technology Stack
+Gemini receives the question, up to four earlier messages, and up to 3,000 characters from each matched note. E.D.I.T.H. uses `[[note links]]` for citations. It can also answer from general knowledge when the vault has no answer. Open a citation to check what the note says.
 
-*   **Frontend / Framework:** Next.js 16 (App Router, Server Components), React 19
-*   **AI Engine:** Google Gemini Interactions API (`gemini-3.6-flash`, `gemini-3.5-flash-lite`)
-*   **Styling & UI:** Tailwind CSS v4 + Custom CSS Variables + Framer Motion
-*   **Database & Auth:** Firebase Auth & Firestore
-*   **Markdown:** `react-markdown`, `remark-gfm`, `react-syntax-highlighter`
-*   **Testing:** Vitest, React Testing Library
+The app calls the Gemini Interactions API with `store: false`. It keeps chat history in the browser and syncs it to the signed-in user’s Firestore document. The [chat route](src/app/api/chat/route.ts) contains the model choices and retrieval limits.
 
-## 📂 Project Structure
+## Run it locally
 
-```text
-src/
-├── app/                  # Next.js App Router pages and layouts
-│   ├── api/              # Backend API routes
-│   │   ├── chat/         # Interactions API & HyDE implementation
-│   │   ├── notes/        # Obsidian Vault note retrieval
-│   │   ├── search/       # Semantic vector search engine
-│   │   ├── similar/      # Find similar notes endpoint
-│   │   └── tree/         # File tree generation for sidebar
-│   └── globals.css       # Tailwind entry and custom CSS variables
-├── components/           # Reusable React components
-│   ├── ChatSidebar.tsx   # E.D.I.T.H. chat interface
-│   ├── LeftSidebar.tsx   # File explorer and navigation sidebar
-│   ├── MainContent.tsx   # Note viewer and primary workspace
-│   ├── MarkdownRenderer.tsx # Obsidian markdown to React parser
-│   ├── Mermaid.tsx       # Mermaid diagram renderer
-│   └── OmniSearch.tsx    # Global semantic search palette
-├── context/              # React Context Providers (e.g., AuthContext)
-└── lib/                  # Utilities, Firebase configs, and logic
-    ├── firebase-admin.ts # Firebase Admin SDK for server-side auth
-    ├── firebase.ts       # Firebase client initialization
-    ├── firestoreChat.ts  # Firestore chat history sync logic
-    └── vectorCache.ts    # Vector caching & cosine similarity math
+Use Node.js 24. Run these commands from the repository root.
+
+```sh
+npm ci
+npm run dev
 ```
 
-## ⚙️ Architecture & Deployment
+Open [localhost:3000](http://localhost:3000). You can preview the sign-in screen without credentials. To read your own vault, create a gitignored `.env.local` with the settings below and restart the dev server.
 
-The application is containerized and deployed automatically to a self-hosted Docker server using a robust CI/CD pipeline. Here is how the official instance runs:
+| Setting | What to supply |
+| --- | --- |
+| `VAULT_PATH` | Absolute path to the folder containing your Markdown notes and attachments. |
+| `SMART_ENV_PATH` | Directory that directly contains the Smart Connections `.ajson` index files. |
+| `NEXT_PUBLIC_FIREBASE_API_KEY`, `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`, `NEXT_PUBLIC_FIREBASE_PROJECT_ID`, `NEXT_PUBLIC_FIREBASE_APP_ID` | Values from your Firebase web app configuration. Enable the sign-in providers you plan to use and authorize the local hostname in Firebase Auth. |
+| `NEXT_PUBLIC_ALLOWED_EMAILS` | Comma-separated list of accounts allowed to open the vault. Each account needs a verified email address. |
+| `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY` | Server-side service account for the same Firebase project. Enclose the private key in one pair of double quotes and use `\n` for its line breaks. |
+| `GEMINI_API_KEY` | Server-side key for the assistant. Reading notes does not use it. |
 
-> **Moved 2026-10-28:** the official instance moved off AWS EC2 to a Hyper-V VM on a homelab machine, reached only through a Cloudflare Tunnel. This is temporary until a cloud provider is picked. Public URLs are unchanged.
+For chat sync, enable Firestore and restrict reads and writes on `users/{uid}` to the verified owner. All allowlisted accounts read the same mounted vault. Keep that vault outside the repository and the web root. The [Personal Wiki template](https://github.com/pokharelsandeep333-commits/Personal-Wiki-Template) is a starting point for a new collection.
 
-1.  **Standalone Next.js:** Optimized Docker builds using `output: 'standalone'` on a `node:24-slim` environment to support `glibc` requirements. Native dependencies for `@huggingface/transformers` (ONNX Runtime, sharp) are marked external in `next.config.ts` and copied into the image by the `Dockerfile`.
-2.  **GitHub Actions:** A multi-stage pipeline running ESLint (strict React 19 hooks purity checks), npm dependency auditing, Gitleaks secret scanning, Vitest unit tests, and finally building & pushing the image to Docker Hub on every commit to the `main` branch.
-3.  **Watchtower (Zero-Downtime):** The server runs Watchtower, which checks Docker Hub every 5 minutes, pulls the latest image and restarts the container, ensuring continuous delivery.
-4.  **Vault Synchronization:** A `sync-vault.sh` script on the server pulls the latest Obsidian vault updates from the remote repository. It runs as a cron job to keep the live web app automatically in sync with your notes.
+## How the hosted vault runs
 
-## 🛠️ Local Development
+SandeepCloud runs the standalone Next.js container on a Hyper-V VM. HTTPS requests reach the VM through a Cloudflare Tunnel. The server syncs a separate copy of the Obsidian vault, so updating a note doesn’t require a new app image. The [SandeepCloud-IAC README](https://github.com/pokharelsandeep333-commits/SandeepCloud-IAC) documents the host and network.
 
-### Prerequisites
+Pull requests run ESLint, Vitest, Gitleaks, and the production dependency audit. On `main`, GitHub Actions also builds the Debian-based Node 24 image, scans it with Trivy, and pushes it to Docker Hub. Watchtower checks for a new image every five minutes. Trivy reports findings, while a high or critical npm advisory blocks the build. See the [release workflow](.github/workflows/docker-build.yml) and [Dockerfile](Dockerfile).
 
-*   Node.js v24+
-*   An active Google Gemini API Key
-*   Firebase Project Setup (Auth & Firestore)
-*   **Obsidian Vault Configuration:** You must set up the [Personal-Wiki-Template](https://github.com/pokharelsandeep333-commits/Personal-Wiki-Template) in your Obsidian vault. This provides the required structure and the generated vector embeddings (`.smart-env` semantic database) necessary for the application to function correctly.
+For a separate deployment, supply the public Firebase configuration when building the image. Provide the Admin credentials, Gemini key, and vault paths at runtime. Mount the vault read-only and point the paths at its location **inside** the container. The browser sends a Firebase ID token for API requests. Images and PDFs use an HTTP-only cookie scoped to `/api/raw`.
 
-### Setup
+## Check a change
 
-1.  Clone the repository:
-    ```bash
-    git clone https://github.com/pokharelsandeep333/Molecular-Zettelkasten.git
-    cd Molecular-Zettelkasten
-    ```
+```sh
+npm run lint -- --max-warnings=0
+npx tsc --noEmit
+npm test
+npm run build
+```
 
-2.  Install dependencies:
-    ```bash
-    npm install
-    ```
-
-3.  Configure your environment variables (`.env.local`):
-    ```env
-    # AI Config
-    GEMINI_API_KEY=your_gemini_api_key
-
-    # Vault Integration
-    VAULT_PATH=/path/to/your/obsidian/vault
-    SMART_ENV_PATH=/path/to/your/obsidian/vault/.smart-env/
-
-    # Application Url
-    NEXT_PUBLIC_API_URL=http://localhost:3000
-
-    # Firebase Config (Client-side)
-    NEXT_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key
-    NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
-    NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
-    NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
-    NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-    NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
-    NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=your_measurement_id
-
-    # Accounts allowed to sign in (comma-separated; defaults to the owner's address)
-    NEXT_PUBLIC_ALLOWED_EMAILS=you@example.com
-
-    # Firebase Admin Config (Server-side for JWT Verification)
-    FIREBASE_CLIENT_EMAIL=your_service_account_email
-    FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
-    ```
-
-4.  Launch the development server:
-    ```bash
-    npm run dev
-    ```
-
-5.  Access the interface at `http://localhost:3000`.
-
-## 🌍 Hosting & Deployment Options
-
-If you want to host your own Molecular Zettelkasten, you must handle a few key configuration changes depending on your target environment. 
-
-### Option A: Docker on a VPS (AWS EC2, DigitalOcean, etc.)
-This is closest to the official setup (which uses a Cloudflare Tunnel instead of Nginx and Certbot) and is the most robust way to host it, as it supports persistent access to your Obsidian vault files. When deploying, consider the following requirements:
-* **GitHub Actions Pipeline:** You must configure all required GitHub Secrets (Firebase API keys, DockerHub credentials) in your forked repository to enable the CI/CD pipeline.
-* **Environment Variables:** Put the `.env` variables next to your `docker-compose.yml` before running `docker compose up -d` on your server. 
-  > **CRITICAL WARNING:** When formatting the `FIREBASE_PRIVATE_KEY` in your server's `.env` file, you must enclose the entire key in exactly one pair of double quotes and ensure there are no leading spaces or trailing extra quotes (e.g., `FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"`). Failure to format this strictly will cause the Firebase Admin SDK to crash, resulting in persistent `401 Unauthorized` API errors.
-* **Reverse Proxy & SSL:** You will need to configure an Nginx reverse proxy to route external web traffic to the Docker container (running on port 3000) and secure your domain using Certbot/Let's Encrypt for SSL.
-* **Automated Syncing:** Set up a vault-sync script (the official server uses `sync-vault.sh`) as a cron job on your server to automatically pull the latest changes from your remote Obsidian vault.
-
-### Option B: Vercel / Serverless (Advanced)
-Deploying to a serverless environment like Vercel requires some architectural changes because this app relies on reading a local file system:
-* **Asset Bundling:** Serverless functions cannot easily read a large external folder of markdown files natively. You must place your Obsidian Vault directly inside the project directory before building so Vercel can bundle the files into the deployment.
-* **Sync Limitations:** This workaround makes it harder to continuously sync new notes, as every new note saved will require triggering a full Vercel rebuild.
-
-## 🔐 Security Model
-
-*   **Every API route is authenticated** with a Firebase ID token (`Authorization: Bearer`) and restricted to verified, allowlisted emails. Vault media loaded by `<img>`/`<iframe>` authenticates with an httpOnly cookie scoped to `/api/raw`, set by `/api/session`.
-*   **Vault access** goes through `src/lib/vault.ts`, which resolves real paths, blocks traversal and hidden folders (`.obsidian`, `.smart-env`, `_templates`), and serves only allowlisted media types.
-*   **Rate limits** (in-memory, per user): 60 req/min general, 10 req/min for the AI assistant, and a per-IP throttle on failed authentication.
-*   **Headers:** a per-request nonce CSP (`src/proxy.ts`), HSTS, `X-Frame-Options`, `nosniff`, and a strict referrer policy (`next.config.ts`).
-*   **Firestore:** chat documents must be restricted to their verified owner by Firestore security rules. The rules file (`firestore.rules`) is kept locally and gitignored; deploy it with `firebase deploy --only firestore:rules`.
-
-## 🧠 Development Guidelines
-
-*   **Purity Checks:** We enforce strict React 19 purity rules. Do not use impure functions (like `Date.now()`) directly inside component bodies or inline event handlers.
-*   **AI Integrations:** Always use the official `@google/genai` Interactions API. Do not use the deprecated `@ai-sdk/google` or `ai` packages.
-*   **Security:** Never hardcode secrets. Ensure Firebase execution is wrapped in `typeof window !== 'undefined'` checks to prevent SSR compilation errors.
-
----
-
-<div align="center">
-  <p style="font-size: 12px; color: #00F0FF; opacity: 0.5;">EVEN DEAD, I'M THE HERO.</p>
-</div>
+The [vault reader](src/lib/vault.ts) handles file access. The [Markdown renderer](src/components/MarkdownRenderer.tsx) handles note syntax, and the [design notes](DESIGN.md) cover typography and panel behavior.
