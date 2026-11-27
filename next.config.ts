@@ -14,6 +14,7 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   // Native ONNX/sharp binaries must be required at runtime, not bundled.
   serverExternalPackages: ["@huggingface/transformers", "onnxruntime-node", "sharp"],
+  experimental: { agentUpgrade: "security" },
   turbopack: {},
   output: "standalone",
   poweredByHeader: false,
