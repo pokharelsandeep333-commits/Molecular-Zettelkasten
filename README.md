@@ -80,7 +80,7 @@ flowchart LR
 2. The server embeds the search text locally with `TaylorAI/bge-micro-v2` at 8-bit precision. It ranks the vault’s saved vectors by cosine similarity, then reads up to three matching notes.
 3. Gemini receives the question, up to four earlier messages, and up to 3,000 characters from each matched note. A citation opens as a `[[note link]]`. If the notes don’t answer the question, E.D.I.T.H. can answer from general knowledge.
 
-Both Gemini calls use `store: false`. The app maintains conversation history in the browser and Firestore. The [chat route](src/app/api/chat/route.ts) defines the models, source limits, and output budget.
+Gemini 4 Hydrogen answers by default. On a rate limit or temporary provider error, the server tries 3.8 Flash, 3.6 Flash, then 3.5 Flash-Lite, once each. Short-query expansion always uses 3.5 Flash-Lite. Both calls use `store: false`. The app maintains conversation history in the browser and Firestore. The [chat route](src/app/api/chat/route.ts) defines the models, source limits, and output budget.
 
 ## 🛡️ Access and security
 
