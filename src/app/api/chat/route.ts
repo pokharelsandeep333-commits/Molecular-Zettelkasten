@@ -7,11 +7,12 @@ import { LIMITS } from '@/lib/rateLimit';
 import { performSemanticSearch, hitToSlug } from '@/lib/semanticSearch';
 import { resolveInVault } from '@/lib/vault';
 
-const DEFAULT_MODEL = 'gemini-3.8-flash';
 const HYDE_MODEL = 'gemini-3.5-flash-lite';
-// Only models this app is meant to spend on; the client cannot pick anything else.
-const ALLOWED_MODELS = [DEFAULT_MODEL, HYDE_MODEL, 'gemini-3.6-flash'] as const;
+const ANSWER_MODELS = ['gemini-4-hydrogen', 'gemini-3.8-flash', 'gemini-3.6-flash', HYDE_MODEL] as const;
+const TRANSIENT_STATUSES = new Set([408, 429, 500, 502, 503, 504]);
 const MAX_OUTPUT_TOKENS = 4096;
+// Leave room within a proxied chat request for retrieval and all four attempts.
+const ANSWER_ATTEMPT_MS = 25_000;
 
 const ChatRequest = z.object({
   input: z.string().trim().min(1, 'Input is required.').max(4000),
@@ -22,12 +23,44 @@ const ChatRequest = z.object({
     }))
     .max(10)
     .default([]),
-  model: z.enum(ALLOWED_MODELS).default(DEFAULT_MODEL),
+  model: z.enum(ANSWER_MODELS).default(ANSWER_MODELS[0]),
 });
 
 // Constructed lazily: GEMINI_API_KEY is absent during `next build`.
 let client: GoogleGenAI | null = null;
 const getClient = () => (client ??= new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY }));
+
+function providerStatus(error: unknown) {
+  if (error instanceof DOMException && error.name === 'TimeoutError') return 504;
+  if (error && typeof error === 'object' && 'status' in error && typeof error.status === 'number') {
+    return error.status;
+  }
+}
+
+async function answerChat(firstModel: typeof ANSWER_MODELS[number], input: string, systemInstruction: string, signal: AbortSignal) {
+  for (const model of ANSWER_MODELS.slice(ANSWER_MODELS.indexOf(firstModel))) {
+    signal.throwIfAborted();
+    const deadline = AbortSignal.timeout(ANSWER_ATTEMPT_MS);
+    try {
+      const result = await getClient().interactions.create({
+        model,
+        input,
+        system_instruction: systemInstruction,
+        generation_config: { max_output_tokens: MAX_OUTPUT_TOKENS },
+        store: false,
+      }, { maxRetries: 0, fetchOptions: { signal: AbortSignal.any([signal, deadline]) } });
+      if (!result.output_text?.trim()) throw new Error('Gemini returned no answer text.');
+      return { text: result.output_text, model };
+    } catch (error) {
+      signal.throwIfAborted();
+      const failure = deadline.aborted ? deadline.reason : error;
+      const status = providerStatus(failure);
+      if (!status || !TRANSIENT_STATUSES.has(status) || model === ANSWER_MODELS.at(-1)) throw failure;
+      console.warn('Gemini answer model unavailable', { model, status });
+    }
+  }
+  throw new Error('No answer model available.');
+}
 
 function stripMarkdown(text: string): string {
   return text
@@ -60,12 +93,12 @@ For example, if they ask "what is my name?", you might output "My name is, user 
 Keep it under 20 words. Do NOT answer the question. Just output the search terms.`,
           generation_config: { max_output_tokens: 64 },
           store: false,
-        });
+        }, { maxRetries: 0, timeout: 5_000 });
         if (hydeRes.output_text) {
           searchQuery = hydeRes.output_text.slice(0, 500);
         }
       } catch (err) {
-        console.warn('HyDE failed, falling back to original query', err);
+        console.warn('HyDE failed, using original query', { status: providerStatus(err) });
       }
     }
 
@@ -141,24 +174,20 @@ ${contextString}`;
       ? `[Conversation History]\n${historyString}\n\n[New Message]\nUSER: ${input}`
       : input;
 
-    const interaction = await getClient().interactions.create({
-      model,
-      input: finalInput,
-      system_instruction: systemInstruction,
-      generation_config: { max_output_tokens: MAX_OUTPUT_TOKENS },
-      store: false, // Stateless interaction to prevent memory bloat
-    });
-
-    return NextResponse.json({ text: interaction.output_text ?? '' });
+    return NextResponse.json(await answerChat(model, finalInput, systemInstruction, req.signal));
   } catch (error: unknown) {
-    console.error('Chat API Error:', error);
-    const message = error instanceof Error ? error.message : '';
+    const status = providerStatus(error);
+    console.error('Chat request failed', { status });
 
-    if (message.includes('Quota exceeded') || message.includes('429')) {
+    if (status === 429) {
       return NextResponse.json(
         { error: 'API Quota Exhausted. Please wait before trying again.' },
         { status: 429 }
       );
+    }
+
+    if (status && TRANSIENT_STATUSES.has(status)) {
+      return NextResponse.json({ error: 'The assistant is temporarily unavailable. Please try again.' }, { status: 503 });
     }
 
     return NextResponse.json({ error: 'Failed to process chat request.' }, { status: 500 });
