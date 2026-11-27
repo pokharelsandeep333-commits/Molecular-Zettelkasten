@@ -14,13 +14,20 @@ README.md
 *.pem
 .DS_Store
 
-# Local-only agent and Firebase files (AGENTS.md holds server access details)
+# Local-only agent and Firebase files (CLAUDE.md holds server access details)
 .agents
 .claude
 AGENTS.md
 CLAUDE.md
 CLAUDE.local.md
 skills-lock.json
+.codex
+.gemini
+GEMINI.md
+.cursor
+.cursorrules
+.windsurfrules
+.mcp.json
 firebase.json
 .firebaserc
 .firebase

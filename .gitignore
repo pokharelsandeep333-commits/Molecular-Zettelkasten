@@ -48,6 +48,13 @@ next-env.d.ts
 /CLAUDE.local.md
 /AGENTS.md
 /skills-lock.json
+/.codex/
+/.gemini/
+/GEMINI.md
+/.cursor/
+/.cursorrules
+/.windsurfrules
+/.mcp.json
 
 # Firebase config, rules and CLI state (local only, never pushed)
 /firebase.json
