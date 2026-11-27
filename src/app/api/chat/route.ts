@@ -7,10 +7,10 @@ import { LIMITS } from '@/lib/rateLimit';
 import { performSemanticSearch, hitToSlug } from '@/lib/semanticSearch';
 import { resolveInVault } from '@/lib/vault';
 
-const DEFAULT_MODEL = 'gemini-3.6-flash';
+const DEFAULT_MODEL = 'gemini-3.8-flash';
 const HYDE_MODEL = 'gemini-3.5-flash-lite';
 // Only models this app is meant to spend on; the client cannot pick anything else.
-const ALLOWED_MODELS = [DEFAULT_MODEL, HYDE_MODEL] as const;
+const ALLOWED_MODELS = [DEFAULT_MODEL, HYDE_MODEL, 'gemini-3.6-flash'] as const;
 const MAX_OUTPUT_TOKENS = 4096;
 
 const ChatRequest = z.object({
